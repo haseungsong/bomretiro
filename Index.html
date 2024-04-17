@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>모바일 메뉴판 예약</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            scroll-behavior: smooth;
+        }
+        .navigation, .back-to-menu {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+        .navigation a, .back-to-menu a {
+            color: white;
+            padding: 10px;
+            text-decoration: none;
+        }
+        section {
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .menu, .reservation-form {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 10px;
+        }
+        label, select, input {
+            display: block;
+            margin: 10px 0;
+        }
+        input[type="submit"], .back-to-menu a {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+        }
+        input[type="submit"]:hover, .back-to-menu a:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="navigation">
+        <a href="#menu">메뉴판 보기</a>
+        <a href="#reservation">예약하기</a>
+    </div>
+
+    <section id="menu">
+        <div class="menu">
+            <h2>메뉴판</h2>
+            <p>메뉴 1: 설명</p>
+            <p>메뉴 2: 설명</p>
+        </div>
+    </section>
+
+    <section id="reservation">
+        <div class="reservation-form">
+            <h2>예약하기</h2>
+            <form action="/reservation" method="post">
+                <label for="menu">메뉴 선택:</label>
+                <select id="menu" name="menu">
+                    <option value="menu1">메뉴 1</option>
+                    <option value="menu2">메뉴 2</option>
+                </select><br>
+                <label for="name">이름:</label>
+                <input type="text" id="name" name="name"><br>
+                <label for="date">날짜:</label>
+                <input type="date" id="date" name="date"><br>
+                <label for="time">시간:</label>
+                <input type="time" id="time" name="time"><br>
+                <label for="guests">인원수:</label>
+                <input type="number" id="guests" name="guests" min="1" max="10"><br>
+                <input type="submit" value="예약하기">
+            </form>
+            <!-- 메뉴판으로 돌아가기 버튼 추가 -->
+            <div class="back-to-menu">
+                <a href="#menu">메뉴판으로 돌아가기</a>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

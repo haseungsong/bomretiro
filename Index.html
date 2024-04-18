@@ -1,66 +1,175 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
+    <!DOCTYPE html>
+    <html lang="ko">
+    <head>
     <meta charset="UTF-8">
-    <title>모바일 메뉴판 예약</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>메뉴와 예약</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 0;
-            scroll-behavior: smooth;
-        }
-        .navigation, .back-to-menu {
-            background-color: #333;
-            color: white;
-            padding: 10px;
-            text-align: center;
-        }
-        .navigation a, .back-to-menu a {
-            color: white;
-            padding: 10px;
-            text-decoration: none;
-        }
-        section {
-            padding: 20px;
-            min-height: 100vh;
+            background-color: #000; /* 배경색을 검은색으로 설정 */
+            color: #fff; /* 텍스트 색상을 흰색으로 설정 */
         }
         .menu, .reservation-form {
-            background-color: rgba(0, 0, 0, 0.5);
-            color: white;
             padding: 20px;
-            border-radius: 8px;
-            margin: 10px;
         }
-        label, select, input {
-            display: block;
-            margin: 10px 0;
+        h2 {
+            color: #fff; /* 제목 텍스트 색상을 흰색으로 변경 */
         }
-        input[type="submit"], .back-to-menu a {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px;
-            border: none;
-            cursor: pointer;
+        .menu img, .reservation-form img {
             width: 100%;
-            text-align: center;
+            height: auto;
         }
-        input[type="submit"]:hover, .back-to-menu a:hover {
-            background-color: #45a049;
+        .back-to-menu a {
+            display: inline-block;
+            margin-top: 20px;
+            text-decoration: none;
+            color: #007bff;
+        }
+        @media (max-width: 768px) {
+            .menu, .reservation-form {
+                padding: 10px;
+            }
         }
     </style>
-</head>
-<body>
-    <div class="navigation">
-        <a href="#menu">메뉴판 보기</a>
-        <a href="#reservation">예약하기</a>
-    </div>
+    </head>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          document.querySelectorAll('.menu-item button, .drink-item button').forEach(button => {
+            button.addEventListener('click', function() {
+              const container = this.parentNode;
+              const inputField = container.querySelector('input[type=number]');
+              let currentValue = parseInt(inputField.value);
+              const delta = this.textContent === '+' ? 1 : (currentValue > 0 ? -1 : 0);
+              
+              let newValue = currentValue + delta;
+              inputField.value = newValue;
+        
+              // 가격 계산
+              const pricePerItem = parseInt(container.querySelector('.price-per-item').textContent);
+              const totalPriceElement = container.querySelector('.total-price');
+              totalPriceElement.textContent = newValue * pricePerItem; // 총 가격 업데이트
+            });
+          });
+        });
+        </script>
+
+    <body>
 
     <section id="menu">
         <div class="menu">
             <h2>메뉴판</h2>
-            <p>메뉴 1: 설명</p>
-            <p>메뉴 2: 설명</p>
+            <div class="menu-item" id="menu1">
+                <p>Original chicken: Crispy</p>
+                <img src="https://drive.google.com/uc?export=view&id=1Qt5WUropzU-LEH0TXfGzxajM7WqN1Tdi" alt="메뉴 1 사진">
+                <button type="button">-</button>
+                <input type="number" value="0" min="0">
+                <button type="button">+</button>
+                <span class="price-per-item">5000</span>원
+                <span class="total-price">0</span>원
+              </div>
+            <div class="menu-item" id="menu2">
+                <p>메뉴 2: 설명</p>
+                <img src="path_to_image3.jpg" alt="메뉴 2 사진">
+                <button type="button">-</button>
+                <input type="number" value="0" min="0">
+                <button type="button">+</button>
+                <span class="price-per-item">3000</span>원
+                <span class="total-price">0</span>원
+              </div>
+            <div class="menu-item" id="menu3">
+                <p>메뉴 3: 설명</p>
+                <img src="path_to_image3.jpg" alt="메뉴 3 사진">
+                <button type="button">-</button>
+                <input type="number" value="0" min="0">
+                <button type="button">+</button>
+                <span class="price-per-item">4000</span>원
+                <span class="total-price">0</span>원
+              </div>
+            <div class="menu-item" id="menu4">
+                <p>메뉴 4: 설명</p>
+                <img src="path_to_image3.jpg" alt="메뉴 4 사진">
+                <button type="button">-</button>
+                <input type="number" value="0" min="0">
+                <button type="button">+</button>
+                <span class="price-per-item">8000</span>원
+                <span class="total-price">0</span>원
+              </div>
+            <div class="menu-item" id="menu5">
+                <p>메뉴 5: 설명</p>
+                <img src="path_to_image3.jpg" alt="메뉴 5 사진">
+                <button type="button">-</button>
+                <input type="number" value="0" min="0">
+                <button type="button">+</button>
+                <span class="price-per-item">7000</span>원
+                <span class="total-price">0</span>원
+              </div>
+            <div class="menu-item" id="menu6">
+                <p>메뉴 6: 설명</p>
+                <img src="path_to_image3.jpg" alt="메뉴 6 사진">
+                <button type="button">-</button>
+                <input type="number" value="0" min="0">
+                <button type="button">+</button>
+                <span class="price-per-item">1000</span>원
+                <span class="total-price">0</span>원
+              </div>
+            <div class="menu-item" id="menu7">
+                <p>메뉴 7: 설명</p>
+                <img src="path_to_image3.jpg" alt="메뉴 7 사진">
+                <button type="button">-</button>
+                <input type="number" value="0" min="0">
+                <button type="button">+</button>
+                <span class="price-per-item">8000</span>원
+                <span class="total-price">0</span>원
+              </div>
+            <div class="menu-item">
+                <p>음료 1: 설명</p>
+                <img src="path_to_image8.jpg" alt="음료 1 사진">
+                <div class="quantity-controls">
+                    <button type="button" onclick="decreaseQuantity('quantity1')">-</button>
+                    <input type="number" id="quantity1" value="0" min="0">
+                    <button type="button" onclick="increaseQuantity('quantity1')">+</button>
+                </div>
+            </div>
+            <div class="menu-item">
+                <p>음료 2: 설명</p>
+                <img src="path_to_image9.jpg" alt="음료 2 사진">
+                <div class="quantity-controls">
+                    <button type="button" onclick="decreaseQuantity('quantity1')">-</button>
+                    <input type="number" id="quantity1" value="0" min="0">
+                    <button type="button" onclick="increaseQuantity('quantity1')">+</button>
+                </div>
+            </div>
+            <div class="menu-item">
+                <p>음료 3: 설명</p>
+                <img src="path_to_image10.jpg" alt="음료 3 사진">
+                <div class="quantity-controls">
+                    <button type="button" onclick="decreaseQuantity('quantity1')">-</button>
+                    <input type="number" id="quantity1" value="0" min="0">
+                    <button type="button" onclick="increaseQuantity('quantity1')">+</button>
+                </div>
+            </div>
+            <div class="menu-item">
+                <p>음료 4: 설명</p>
+                <img src="path_to_image11.jpg" alt="음료 4 사진">
+                <div class="quantity-controls">
+                    <button type="button" onclick="decreaseQuantity('quantity1')">-</button>
+                    <input type="number" id="quantity1" value="0" min="0">
+                    <button type="button" onclick="increaseQuantity('quantity1')">+</button>
+                </div>
+            </div>
+            <div class="menu-item">
+                <p>음료 5: 설명</p>
+                <img src="path_to_image12.jpg" alt="음료 5 사진">
+                <div class="quantity-controls">
+                    <button type="button" onclick="decreaseQuantity('quantity1')">-</button>
+                    <input type="number" id="quantity1" value="0" min="0">
+                    <button type="button" onclick="increaseQuantity('quantity1')">+</button>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -68,26 +177,60 @@
         <div class="reservation-form">
             <h2>예약하기</h2>
             <form action="/reservation" method="post">
-                <label for="menu">메뉴 선택:</label>
-                <select id="menu" name="menu">
-                    <option value="menu1">메뉴 1</option>
-                    <option value="menu2">메뉴 2</option>
-                </select><br>
-                <label for="name">이름:</label>
-                <input type="text" id="name" name="name"><br>
-                <label for="date">날짜:</label>
-                <input type="date" id="date" name="date"><br>
-                <label for="time">시간:</label>
-                <input type="time" id="time" name="time"><br>
-                <label for="guests">인원수:</label>
-                <input type="number" id="guests" name="guests" min="1" max="10"><br>
-                <input type="submit" value="예약하기">
+                <!-- 예약 폼 내용 -->
             </form>
-            <!-- 메뉴판으로 돌아가기 버튼 추가 -->
             <div class="back-to-menu">
-                <a href="#menu">메뉴판으로 돌아가기</a>
-            </div>
-        </div>
-    </section>
-</body>
-</html>
+                <a href="#menu">메뉴
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>레스토랑 메뉴 및 예약</title>
+                        <style>
+                            body {
+                                background-color: black;
+                                color: white;
+                                font-family: Arial, sans-serif;
+                            }
+                            .menu-item {
+                                margin-bottom: 20px;
+                            }
+                            .menu-item img {
+                                width: 100px;
+                                height: auto;
+                            }
+                            .reservation-form {
+                                margin-top: 20px;
+                            }
+                            @media (max-width: 600px) {
+                                .menu-item img {
+                                    width: 50px;
+                                }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                    
+                    <div id="menu">
+                        <h2>메뉴</h2>
+                        <div class="menu-item">
+                            <h3>메뉴 아이템 1</h3>
+                            <p>설명...</p>
+                            <img src="menu-item1.jpg" alt="메뉴 아이템 1">
+                        </div>
+                        <!-- 메뉴 아이템 추가 -->
+                    </div>
+                    
+                    <div class="reservation-form">
+                        <h2>예약</h2>
+                        <form>
+                            <!-- 예약 폼 내용 추가 -->
+                        </form>
+                    </div>
+                    
+                    <div class="back-to-menu">
+                        <a href="#menu">메뉴로 돌아가기</a>
+                    </div>
+                    
+                    </body>
+                    </html>
+                    

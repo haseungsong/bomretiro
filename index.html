@@ -1,99 +1,104 @@
-<!DOCTYPE html><html lang="en"><head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Firebase Realtime Database Viewer with Notification</title>
-  <!-- Firebase SDK 추가 (8.x 버전) -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script></head><body>
-  <h1>Firebase Realtime Database Viewer</h1>
-  <table id="dataTable" border="1" cellpadding="5" cellspacing="0">
-    <thead>
-      <tr>
-        <th>Number</th>
-        <th>Table Number</th>
-        <th>Timestamp</th>
-        <th>Order List</th>
-        <th>Total Amount</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Realtime Database Viewer with Notification</title>
+    <!-- Firebase SDK 추가 (8.x 버전) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</head>
+<body>
+    <h1>Firebase Realtime Database Viewer</h1>
+    <table id="dataTable" border="1" cellpadding="5" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Number</th>
+                <th>Table Number</th>
+                <th>Timestamp</th>
+                <th>Order List</th>
+                <th>Total Amount</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 
-  <!-- Notification Sound -->
-  <audio id="notificationSound" src="notification.mp3" preload="auto"></audio>
+    <!-- Notification Sound -->
+    <audio id="notificationSound" src="notification.mp3" preload="auto"></audio>
 
-  <script>
-    // Firebase 설정 정보 (Firebase 콘솔에서 가져온 정보를 여기에 추가하세요)
-    const firebaseConfig = {
-      apiKey: "AIzaSyBltwkIkocgAMya7_lKglLVikl9dIzegoI",
-      authDomain: "seoulchicken-fa390.firebaseapp.com",
-      databaseURL: "https://seoulchicken-fa390-default-rtdb.firebaseio.com",
-      projectId: "seoulchicken-fa390",
-      storageBucket: "seoulchicken-fa390.appspot.com",
-      messagingSenderId: "159382576680",
-      appId: "1:159382576680:web:8d5440ea41ba4cb89d9f1d",
-      measurementId: "G-FRCNM1T9JB"
-    };
+    <script>
+        // Firebase 설정 정보 (Firebase 콘솔에서 가져온 정보를 여기에 추가하세요)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBltwkIkocgAMya7_lKglLVikl9dIzegoI",
+            authDomain: "seoulchicken-fa390.firebaseapp.com",
+            databaseURL: "https://seoulchicken-fa390-default-rtdb.firebaseio.com",
+            projectId: "seoulchicken-fa390",
+            storageBucket: "seoulchicken-fa390.appspot.com",
+            messagingSenderId: "159382576680",
+            appId: "1:159382576680:web:8d5440ea41ba4cb89d9f1d",
+            measurementId: "G-FRCNM1T9JB"
+        };
 
-    // Firebase 초기화
-    const app = firebase.initializeApp(firebaseConfig);
-    const database = firebase.database(app);
+        // Firebase 초기화
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database(app);
 
-    // Notification Sound Element
-    const notificationSound = document.getElementById('notificationSound');
+        // Notification Sound Element
+        const notificationSound = document.getElementById('notificationSound');
 
-    // 데이터베이스에서 데이터 가져오기 (실시간 업데이트)
-    const dbRef = database.ref();
-    dbRef.on('value', (snapshot) => {
-      const data = snapshot.val();
-      displayData(data);
-    });
+        let count = 1; // 데이터 번호를 기록하기 위한 카운터
 
-    // 데이터를 테이블로 표시하는 함수
-    function displayData(data) {
-      const tableBody = document.querySelector('#dataTable tbody');
-      tableBody.innerHTML = ''; // 기존 테이블 내용 지우기
+        // 데이터를 테이블로 표시하는 함수
+        function displayData(key, data) {
+            const tableBody = document.querySelector('#dataTable tbody');
 
-      let count = 1; // 각 데이터의 번호를 기록하기 위한 카운터
+            const row = document.createElement('tr');
 
-      // 데이터 순회
-      for (const key in data) {
-        if (data.hasOwnProperty(key)) {
-          const row = document.createElement('tr');
+            // 각 데이터 필드를 별도로 가져오기
+            const number = count++; // 임의 번호 (1부터 시작하여 자동 증가)
+            const tableNumber = data.tableNumber || ''; // 테이블 번호
+            const timestamp = data.timestamp || ''; // 타임스탬프
+            const orderList = data.orderList ? JSON.stringify(data.orderList) : ''; // 주문 목록
+            const totalAmount = data.totalAmount || ''; // 총 금액
 
-          // 각 데이터 필드를 별도로 가져오기
-          const number = count++; // 임의 번호 (1부터 시작하여 자동 증가)
-          const tableNumber = data[key].tableNumber || ''; // 테이블 번호
-          const timestamp = data[key].timestamp; // 타임스탬프
-          const orderList = data[key].orderList ? JSON.stringify(data[key].orderList) : ''; // 주문 목록
-          const totalAmount = data[key].totalAmount; // 총 금액
+            // 각 필드를 셀로 만들어 테이블에 추가
+            const numberCell = document.createElement('td');
+            const tableNumberCell = document.createElement('td');
+            const timestampCell = document.createElement('td');
+            const orderListCell = document.createElement('td');
+            const totalAmountCell = document.createElement('td');
 
-          // 각 필드를 셀로 만들어 테이블에 추가
-          const numberCell = document.createElement('td');
-          const tableNumberCell = document.createElement('td');
-          const timestampCell = document.createElement('td');
-          const orderListCell = document.createElement('td');
-          const totalAmountCell = document.createElement('td');
+            numberCell.textContent = number; // 임의 번호 표시
+            tableNumberCell.textContent = tableNumber; // 테이블 번호 표시
+            timestampCell.textContent = timestamp; // 타임스탬프 표시
+            orderListCell.textContent = orderList; // 주문 목록 표시
+            totalAmountCell.textContent = totalAmount; // 총 금액 표시
 
-          numberCell.textContent = number; // 임의 번호 표시
-          tableNumberCell.textContent = tableNumber; // 테이블 번호 표시
-          timestampCell.textContent = timestamp; // 타임스탬프 표시
-          orderListCell.textContent = orderList; // 주문 목록 표시
-          totalAmountCell.textContent = totalAmount; // 총 금액 표시
+            row.appendChild(numberCell);
+            row.appendChild(tableNumberCell);
+            row.appendChild(timestampCell);
+            row.appendChild(orderListCell);
+            row.appendChild(totalAmountCell);
 
-          row.appendChild(numberCell);
-          row.appendChild(tableNumberCell);
-          row.appendChild(timestampCell);
-          row.appendChild(orderListCell);
-          row.appendChild(totalAmountCell);
-
-          tableBody.appendChild(row);
+            tableBody.appendChild(row);
         }
-      }
-    }
 
-    // 실시간으로 새 데이터가 추가될 때 알림 소리 재생
-    dbRef.on('child_added', (snapshot) => {
-      notificationSound.play(); // 새 데이터가 추가될 때 소리 재생
-    });
-  </script></body></html>
+        // Firebase에서 기존 데이터 불러오기
+        const dbRef = database.ref('orders'); // 데이터가 저장된 정확한 경로로 설정
+        dbRef.once('value', (snapshot) => {
+            const data = snapshot.val();
+            for (const key in data) {
+                if (data.hasOwnProperty(key)) {
+                    displayData(key, data[key]); // 과거 데이터 테이블에 표시
+                }
+            }
+        });
+
+        // 실시간으로 새 데이터가 추가될 때 테이블에 추가 및 알림 소리 재생
+        dbRef.on('child_added', (snapshot) => {
+            displayData(snapshot.key, snapshot.val()); // 새 데이터 테이블에 추가
+            notificationSound.play(); // 새 데이터가 추가될 때 소리 재생
+        });
+    </script>
+</body>
+</html>

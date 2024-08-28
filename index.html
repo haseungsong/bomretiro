@@ -10,14 +10,20 @@
 </head>
 <body>
     <h1>Firebase Realtime Database Viewer</h1>
+    <label for="dateFilter">Filter by Date:</label>
+    <select id="dateFilter">
+        <option value="all">All Dates</option>
+    </select>
     <table id="dataTable" border="1" cellpadding="5" cellspacing="0">
         <thead>
             <tr>
                 <th>Number</th>
+                <th>Date</th>
                 <th>Table Number</th>
                 <th>Timestamp</th>
                 <th>Order List</th>
                 <th>Total Amount</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody></tbody>
@@ -43,62 +49,148 @@
         const app = firebase.initializeApp(firebaseConfig);
         const database = firebase.database(app);
 
-        // Notification Sound Element
-        const notificationSound = document.getElementById('notificationSound');
+        const dateFilter = document.getElementById('dateFilter'); // 날짜 필터 드롭다운
+        const tableBody = document.querySelector('#dataTable tbody'); // 테이블 바디
+        const notificationSound = document.getElementById('notificationSound'); // 알림 소리
 
         let count = 1; // 데이터 번호를 기록하기 위한 카운터
+        let allData = []; // 모든 데이터를 저장할 배열
 
         // 데이터를 테이블로 표시하는 함수
         function displayData(key, data) {
-            const tableBody = document.querySelector('#dataTable tbody');
-
             const row = document.createElement('tr');
 
             // 각 데이터 필드를 별도로 가져오기
-            const number = count++; // 임의 번호 (1부터 시작하여 자동 증가)
+            const number = count++; // 데이터 번호는 1부터 시작하여 새로 추가될 때마다 증가
             const tableNumber = data.tableNumber || ''; // 테이블 번호
             const timestamp = data.timestamp || ''; // 타임스탬프
+
+            // 타임스탬프에서 'T' 이전의 날짜 부분 추출
+            const date = timestamp.split('T')[0] || ''; 
+            
+            // 타임스탬프에서 'T' 이후의 시간 부분만 추출
+            const time = timestamp.split('T')[1] || '';
+
             const orderList = data.orderList ? JSON.stringify(data.orderList) : ''; // 주문 목록
             const totalAmount = data.totalAmount || ''; // 총 금액
 
             // 각 필드를 셀로 만들어 테이블에 추가
             const numberCell = document.createElement('td');
+            const dateCell = document.createElement('td'); // Date 셀
             const tableNumberCell = document.createElement('td');
-            const timestampCell = document.createElement('td');
+            const timestampCell = document.createElement('td'); // 시간만 표시되는 셀
             const orderListCell = document.createElement('td');
             const totalAmountCell = document.createElement('td');
+            const actionCell = document.createElement('td'); // Action 셀
+
+            // Pront 버튼 생성
+            const prontButton = document.createElement('button');
+            prontButton.textContent = 'Pront';
+            prontButton.onclick = function() {
+                row.style.backgroundColor = 'green'; // Pront 버튼 클릭 시 행의 배경색을 녹색으로 변경
+            };
+
+            // Cancel 버튼 생성
+            const cancelButton = document.createElement('button');
+            cancelButton.textContent = 'Cancel';
+            cancelButton.onclick = function() {
+                row.style.backgroundColor = ''; // Cancel 버튼 클릭 시 배경색을 초기화
+            };
+
+            // Pront 버튼과 Cancel 버튼 추가
+            actionCell.appendChild(prontButton);
+            actionCell.appendChild(cancelButton);
 
             numberCell.textContent = number; // 임의 번호 표시
+            dateCell.textContent = date; // 추출한 날짜 표시
             tableNumberCell.textContent = tableNumber; // 테이블 번호 표시
-            timestampCell.textContent = timestamp; // 타임스탬프 표시
+            timestampCell.textContent = time; // 추출한 시간만 표시
             orderListCell.textContent = orderList; // 주문 목록 표시
             totalAmountCell.textContent = totalAmount; // 총 금액 표시
 
             row.appendChild(numberCell);
+            row.appendChild(dateCell);
             row.appendChild(tableNumberCell);
             row.appendChild(timestampCell);
             row.appendChild(orderListCell);
             row.appendChild(totalAmountCell);
+            row.appendChild(actionCell); // Action 셀 추가
 
-            tableBody.appendChild(row);
+            // 새 데이터는 항상 테이블의 첫 번째 행에 추가
+            tableBody.insertBefore(row, tableBody.firstChild);
         }
 
-        // Firebase에서 기존 데이터 불러오기
-        const dbRef = database.ref('orders'); // 데이터가 저장된 정확한 경로로 설정
-        dbRef.once('value', (snapshot) => {
-            const data = snapshot.val();
-            for (const key in data) {
-                if (data.hasOwnProperty(key)) {
-                    displayData(key, data[key]); // 과거 데이터 테이블에 표시
-                }
-            }
+        // Firebase에서 기존 데이터 불러오기 (시간 역순으로 표시)
+        function loadDataFromFirebase() {
+            const dbRef = database.ref('orders'); // 데이터가 저장된 정확한 경로로 설정
+            dbRef.once('value', (snapshot) => {
+                const data = snapshot.val();
+                const sortedKeys = Object.keys(data).sort((a, b) => new Date(data[b].timestamp) - new Date(data[a].timestamp)); // 타임스탬프 기준으로 역순 정렬
+
+                sortedKeys.forEach((key) => {
+                    allData.push({ key, data: data[key] }); // 모든 데이터를 저장
+                    displayData(key, data[key]); // 과거 데이터 테이블에 역순으로 표시
+                });
+
+                populateDateFilter(); // 날짜 필터에 값 추가
+            });
+        }
+
+        // 날짜 필터 드롭다운을 채우는 함수
+        function populateDateFilter() {
+            const uniqueDates = [...new Set(allData.map(item => item.data.timestamp.split('T')[0]))]; // 중복 제거한 날짜 목록
+            uniqueDates.forEach(date => {
+                const option = document.createElement('option');
+                option.value = date;
+                option.textContent = date;
+                dateFilter.appendChild(option);
+            });
+        }
+
+        // 날짜 필터가 변경되었을 때 호출되는 함수
+        dateFilter.addEventListener('change', function() {
+            const selectedDate = dateFilter.value;
+            filterDataByDate(selectedDate);
         });
 
+        // 선택한 날짜에 따라 데이터를 필터링하여 표시하는 함수
+        function filterDataByDate(date) {
+            tableBody.innerHTML = ''; // 기존 테이블 데이터 지우기
+            count = 1; // 카운터 초기화
+
+            allData.forEach(item => {
+                const itemDate = item.data.timestamp.split('T')[0];
+                if (date === 'all' || itemDate === date) {
+                    displayData(item.key, item.data); // 해당 날짜의 데이터만 표시
+                }
+            });
+        }
+
         // 실시간으로 새 데이터가 추가될 때 테이블에 추가 및 알림 소리 재생
-        dbRef.on('child_added', (snapshot) => {
-            displayData(snapshot.key, snapshot.val()); // 새 데이터 테이블에 추가
-            notificationSound.play(); // 새 데이터가 추가될 때 소리 재생
-        });
+        function setupRealtimeUpdates() {
+            const dbRef = database.ref('orders');
+            dbRef.on('child_added', (snapshot) => {
+                const newData = { key: snapshot.key, data: snapshot.val() };
+                allData.push(newData); // 새 데이터를 저장
+                displayData(snapshot.key, snapshot.val()); // 새 데이터 테이블에 추가
+                notificationSound.play(); // 새 데이터가 추가될 때 소리 재생
+
+                // 날짜 필터 업데이트
+                const newDate = snapshot.val().timestamp.split('T')[0];
+                if (!Array.from(dateFilter.options).some(option => option.value === newDate)) {
+                    const option = document.createElement('option');
+                    option.value = newDate;
+                    option.textContent = newDate;
+                    dateFilter.appendChild(option);
+                }
+            });
+        }
+
+        // 페이지가 로드될 때 Firebase에서 데이터 불러오기 및 실시간 업데이트 설정
+        window.onload = function() {
+            loadDataFromFirebase(); // Firebase에서 기존 데이터 불러오기
+            setupRealtimeUpdates(); // 실시간 업데이트 설정
+        };
     </script>
 </body>
 </html>

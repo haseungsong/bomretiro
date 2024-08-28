@@ -19,8 +19,8 @@
             <tr>
                 <th>Number</th>
                 <th>Date</th>
-                <th>Table Number</th>
                 <th>Timestamp</th>
+                <th>Table Number</th>
                 <th>Order List</th>
                 <th>Total Amount</th>
                 <th>Action</th>
@@ -56,7 +56,24 @@
         let count = 1; // 데이터 번호를 기록하기 위한 카운터
         let allData = []; // 모든 데이터를 저장할 배열
 
-        // 데이터를 테이블로 표시하는 함수
+        // 데이터를 Local Storage에 저장하는 함수
+        function saveDataToLocalStorage() {
+            localStorage.setItem('firebaseData', JSON.stringify(allData));
+        }
+
+        // Local Storage에서 데이터를 불러오는 함수
+        function loadDataFromLocalStorage() {
+            const storedData = localStorage.getItem('firebaseData');
+            if (storedData) {
+                allData = JSON.parse(storedData);
+                allData.forEach(item => {
+                    displayData(item.key, item.data);
+                });
+                populateDateFilter(); // 날짜 필터에 값 추가
+            }
+        }
+
+       // 데이터를 테이블로 표시하는 함수
         function displayData(key, data) {
             const row = document.createElement('tr');
 
@@ -65,11 +82,10 @@
             const tableNumber = data.tableNumber || ''; // 테이블 번호
             const timestamp = data.timestamp || ''; // 타임스탬프
 
-            // 타임스탬프에서 'T' 이전의 날짜 부분 추출
-            const date = timestamp.split('T')[0] || ''; 
-            
-            // 타임스탬프에서 'T' 이후의 시간 부분만 추출
-            const time = timestamp.split('T')[1] || '';
+            // 타임스탬프에서 날짜와 시간 부분 분리
+            const dateObj = new Date(timestamp); // 타임스탬프를 Date 객체로 변환
+            const date = dateObj.toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' }); // 날짜만 추출
+            const time = dateObj.toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul' }); // 시간만 추출
 
             const orderList = data.orderList ? JSON.stringify(data.orderList) : ''; // 주문 목록
             const totalAmount = data.totalAmount || ''; // 총 금액
@@ -77,8 +93,8 @@
             // 각 필드를 셀로 만들어 테이블에 추가
             const numberCell = document.createElement('td');
             const dateCell = document.createElement('td'); // Date 셀
-            const tableNumberCell = document.createElement('td');
             const timestampCell = document.createElement('td'); // 시간만 표시되는 셀
+            const tableNumberCell = document.createElement('td');
             const orderListCell = document.createElement('td');
             const totalAmountCell = document.createElement('td');
             const actionCell = document.createElement('td'); // Action 셀
@@ -103,15 +119,15 @@
 
             numberCell.textContent = number; // 임의 번호 표시
             dateCell.textContent = date; // 추출한 날짜 표시
-            tableNumberCell.textContent = tableNumber; // 테이블 번호 표시
             timestampCell.textContent = time; // 추출한 시간만 표시
+            tableNumberCell.textContent = tableNumber; // 테이블 번호 표시
             orderListCell.textContent = orderList; // 주문 목록 표시
             totalAmountCell.textContent = totalAmount; // 총 금액 표시
 
             row.appendChild(numberCell);
             row.appendChild(dateCell);
-            row.appendChild(tableNumberCell);
             row.appendChild(timestampCell);
+            row.appendChild(tableNumberCell);
             row.appendChild(orderListCell);
             row.appendChild(totalAmountCell);
             row.appendChild(actionCell); // Action 셀 추가
@@ -121,24 +137,35 @@
         }
 
         // Firebase에서 기존 데이터 불러오기 (시간 역순으로 표시)
-        function loadDataFromFirebase() {
-            const dbRef = database.ref('orders'); // 데이터가 저장된 정확한 경로로 설정
-            dbRef.once('value', (snapshot) => {
-                const data = snapshot.val();
-                const sortedKeys = Object.keys(data).sort((a, b) => new Date(data[b].timestamp) - new Date(data[a].timestamp)); // 타임스탬프 기준으로 역순 정렬
+            function loadDataFromFirebase() {
+                const dbRef = database.ref('orders'); // 데이터가 저장된 정확한 경로로 설정
+                dbRef.once('value', (snapshot) => {
+                    const data = snapshot.val();
+                    const sortedKeys = Object.keys(data).sort((a, b) => new Date(data[b].timestamp) - new Date(data[a].timestamp)); // 타임스탬프 기준으로 역순 정렬
 
-                sortedKeys.forEach((key) => {
-                    allData.push({ key, data: data[key] }); // 모든 데이터를 저장
-                    displayData(key, data[key]); // 과거 데이터 테이블에 역순으로 표시
+                    sortedKeys.forEach((key) => {
+                        // allData에 중복된 데이터가 없을 경우에만 추가
+                        if (!allData.some(item => item.key === key)) {
+                            allData.push({ key, data: data[key] }); // 새 데이터를 저장
+                            displayData(key, data[key]); // 과거 데이터 테이블에 역순으로 표시
+                        }
+                    });
+
+                    saveDataToLocalStorage(); // 데이터를 Local Storage에 저장
+                    populateDateFilter(); // 날짜 필터에 값 추가
                 });
+            }
 
-                populateDateFilter(); // 날짜 필터에 값 추가
-            });
-        }
+            // 페이지가 로드될 때 Local Storage에서 데이터 불러오기 및 Firebase에서 데이터 가져오기
+            window.onload = function() {
+                loadDataFromLocalStorage(); // Local Storage에서 기존 데이터 불러오기
+                setupRealtimeUpdates(); // 실시간 업데이트 설정
+                setTimeout(loadDataFromFirebase, 500); // Firebase에서 데이터 가져오기 (LocalStorage 데이터가 먼저 표시되도록 0.5초 대기)
+            };
 
         // 날짜 필터 드롭다운을 채우는 함수
         function populateDateFilter() {
-            const uniqueDates = [...new Set(allData.map(item => item.data.timestamp.split('T')[0]))]; // 중복 제거한 날짜 목록
+            const uniqueDates = [...new Set(allData.map(item => new Date(item.data.timestamp).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })))]; // 중복 제거한 날짜 목록
             uniqueDates.forEach(date => {
                 const option = document.createElement('option');
                 option.value = date;
@@ -159,7 +186,7 @@
             count = 1; // 카운터 초기화
 
             allData.forEach(item => {
-                const itemDate = item.data.timestamp.split('T')[0];
+                const itemDate = new Date(item.data.timestamp).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' });
                 if (date === 'all' || itemDate === date) {
                     displayData(item.key, item.data); // 해당 날짜의 데이터만 표시
                 }
@@ -174,9 +201,10 @@
                 allData.push(newData); // 새 데이터를 저장
                 displayData(snapshot.key, snapshot.val()); // 새 데이터 테이블에 추가
                 notificationSound.play(); // 새 데이터가 추가될 때 소리 재생
+                saveDataToLocalStorage(); // 새 데이터를 Local Storage에 저장
 
                 // 날짜 필터 업데이트
-                const newDate = snapshot.val().timestamp.split('T')[0];
+                const newDate = new Date(snapshot.val().timestamp).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' });
                 if (!Array.from(dateFilter.options).some(option => option.value === newDate)) {
                     const option = document.createElement('option');
                     option.value = newDate;
@@ -186,8 +214,12 @@
             });
         }
 
-        // 페이지가 로드될 때 Firebase에서 데이터 불러오기 및 실시간 업데이트 설정
+        // Local Storage에 1초마다 데이터를 저장하는 함수
+        setInterval(saveDataToLocalStorage, 1000); // 1초마다 데이터를 저장
+
+        // 페이지가 로드될 때 Local Storage에서 데이터 불러오기 및 Firebase에서 데이터 가져오기
         window.onload = function() {
+            loadDataFromLocalStorage(); // Local Storage에서 기존 데이터 불러오기
             loadDataFromFirebase(); // Firebase에서 기존 데이터 불러오기
             setupRealtimeUpdates(); // 실시간 업데이트 설정
         };

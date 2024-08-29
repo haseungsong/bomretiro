@@ -24,6 +24,7 @@
                 left: 0;
                 top: 0;
                 font-size: 120%; /* 글자 크기를 20% 키움 */
+                text-align: left; /* 왼쪽 정렬 추가 */
             }
         }
     </style>
@@ -288,7 +289,7 @@
 
             // 인쇄 설정 및 호출
             const printWindow = window.open('', '', 'height=500,width=800');
-            printWindow.document.write('<pre style="font-size: 120%;">' + receiptContent + '</pre>'); // 글자 크기를 20% 키움
+            printWindow.document.write('<pre style="font-size: 120%; text-align: left;">' + receiptContent + '</pre>'); // 글자 크기를 20% 키우고, 왼쪽 정렬 추가
             printWindow.document.close();
             printWindow.focus();
             printWindow.print();

@@ -76,17 +76,28 @@
         // 소리 재생 함수: 소리가 자동으로 재생될 수 있도록 처리
         function playNotificationSound() {
             if (soundEnabled) {
+                notificationSound.volume = 1.0; // 최대 볼륨 설정
                 notificationSound.currentTime = 0; // 소리를 처음부터 재생
-                const playPromise = notificationSound.play();
+                repeatSound(3); // 소리를 3번 반복 재생
+            }
+        }
 
-                if (playPromise !== undefined) {
-                    playPromise.then(() => {
-                        console.log("소리 재생 중");
+        // 소리 반복 재생 함수
+        function repeatSound(repeatCount) {
+            let playCount = 0;
+
+            function playAgain() {
+                if (playCount < repeatCount) {
+                    notificationSound.play().then(() => {
+                        playCount++;
+                        notificationSound.onended = playAgain; // 소리가 끝나면 다시 재생
                     }).catch(error => {
                         console.error("소리 재생 중 오류 발생:", error);
                     });
                 }
             }
+
+            playAgain(); // 첫 재생 호출
         }
 
         // 알림 권한 요청
@@ -112,6 +123,19 @@
                     notification.close(); // 알림 닫기
                 };
             }
+        }
+
+        // Pront 상태를 Local Storage에 저장하는 함수
+        function saveProntoState(key, isPronto) {
+            let prontoState = JSON.parse(localStorage.getItem('prontoState')) || {};
+            prontoState[key] = isPronto;
+            localStorage.setItem('prontoState', JSON.stringify(prontoState));
+        }
+
+        // Pronto 상태를 Local Storage에서 불러오는 함수
+        function loadProntoState(key) {
+            let prontoState = JSON.parse(localStorage.getItem('prontoState')) || {};
+            return prontoState[key] || false;
         }
 
         // 데이터를 Local Storage에 저장하는 함수
@@ -182,6 +206,7 @@
             prontButton.textContent = 'Pront';
             prontButton.onclick = function() {
                 row.style.backgroundColor = 'green'; // Pront 버튼 클릭 시 행의 배경색을 녹색으로 변경
+                saveProntoState(key, true); // Pronto 상태 저장
             };
 
             // Cancel 버튼 생성
@@ -189,6 +214,7 @@
             cancelButton.textContent = 'Cancel';
             cancelButton.onclick = function() {
                 row.style.backgroundColor = ''; // Cancel 버튼 클릭 시 배경색을 초기화
+                saveProntoState(key, false); // Pronto 상태 저장
             };
 
             // Pront 버튼과 Cancel 버튼 추가
@@ -211,6 +237,11 @@
             row.appendChild(qtyCell); // Qty 셀 추가
             row.appendChild(totalAmountCell);
             row.appendChild(actionCell); // Action 셀 추가
+
+            // Pront 상태에 따라 배경색 적용
+            if (loadProntoState(key)) {
+                row.style.backgroundColor = 'green';
+            }
 
             // 새 데이터는 항상 테이블의 첫 번째 행에 추가
             tableBody.insertBefore(row, tableBody.firstChild);

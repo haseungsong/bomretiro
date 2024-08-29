@@ -20,6 +20,7 @@
     <select id="dateFilter">
         <option value="all">All Dates</option>
     </select>
+    <button id="enableSoundButton">Click to Enable Sound</button>
     <table id="dataTable" border="1" cellpadding="5" cellspacing="0">
         <thead>
             <tr>
@@ -59,35 +60,58 @@
         const dateFilter = document.getElementById('dateFilter'); // 날짜 필터 드롭다운
         const tableBody = document.querySelector('#dataTable tbody'); // 테이블 바디
         const notificationSound = document.getElementById('notificationSound'); // 알림 소리
+        const enableSoundButton = document.getElementById('enableSoundButton'); // 소리 활성화 버튼
 
+        let soundEnabled = false; // 소리 재생 가능 여부
         let count = 1; // 데이터 번호를 기록하기 위한 카운터
         let allData = []; // 모든 데이터를 저장할 배열
 
+        // 사용자가 버튼을 클릭하면 소리 재생 활성화
+        enableSoundButton.addEventListener('click', () => {
+            soundEnabled = true;
+            playNotificationSound(); // 소리가 제대로 작동하는지 테스트
+            enableSoundButton.style.display = 'none'; // 버튼 숨기기
+        });
+
         // 소리 재생 함수: 소리가 자동으로 재생될 수 있도록 처리
         function playNotificationSound() {
-            notificationSound.currentTime = 0; // 소리를 처음부터 재생
-            const playPromise = notificationSound.play();
+            if (soundEnabled) {
+                notificationSound.currentTime = 0; // 소리를 처음부터 재생
+                const playPromise = notificationSound.play();
 
-            if (playPromise !== undefined) {
-                playPromise.then(() => {
-                    console.log("소리 재생 중");
-                }).catch(error => {
-                    console.error("소리 재생 중 오류 발생:", error);
-                });
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        console.log("소리 재생 중");
+                    }).catch(error => {
+                        console.error("소리 재생 중 오류 발생:", error);
+                    });
+                }
             }
         }
 
-        // Pronto 상태를 Local Storage에 저장하는 함수
-        function saveProntoState(key, isPronto) {
-            let prontoState = JSON.parse(localStorage.getItem('prontoState')) || {};
-            prontoState[key] = isPronto;
-            localStorage.setItem('prontoState', JSON.stringify(prontoState));
+        // 알림 권한 요청
+        if (Notification.permission !== "granted") {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    console.log("알림 권한 허용됨");
+                }
+            });
         }
 
-        // Pronto 상태를 Local Storage에서 불러오는 함수
-        function loadProntoState(key) {
-            let prontoState = JSON.parse(localStorage.getItem('prontoState')) || {};
-            return prontoState[key] || false;
+        // 새로운 주문 알림 생성 함수
+        function showNotification() {
+            if (Notification.permission === "granted") {
+                const notification = new Notification("새로운 주문이 들어왔습니다!", {
+                    body: "클릭하여 소리를 재생하세요.",
+                    icon: "notification_icon.png" // 알림 아이콘 (원하는 이미지로 교체 가능)
+                });
+
+                // 사용자가 알림을 클릭하면 소리 재생
+                notification.onclick = () => {
+                    playNotificationSound();
+                    notification.close(); // 알림 닫기
+                };
+            }
         }
 
         // 데이터를 Local Storage에 저장하는 함수
@@ -158,7 +182,6 @@
             prontButton.textContent = 'Pront';
             prontButton.onclick = function() {
                 row.style.backgroundColor = 'green'; // Pront 버튼 클릭 시 행의 배경색을 녹색으로 변경
-                saveProntoState(key, true); // Pronto 상태 저장
             };
 
             // Cancel 버튼 생성
@@ -166,7 +189,6 @@
             cancelButton.textContent = 'Cancel';
             cancelButton.onclick = function() {
                 row.style.backgroundColor = ''; // Cancel 버튼 클릭 시 배경색을 초기화
-                saveProntoState(key, false); // Pronto 상태 저장
             };
 
             // Pront 버튼과 Cancel 버튼 추가
@@ -189,11 +211,6 @@
             row.appendChild(qtyCell); // Qty 셀 추가
             row.appendChild(totalAmountCell);
             row.appendChild(actionCell); // Action 셀 추가
-
-            // Pronto 상태에 따라 배경색 적용
-            if (loadProntoState(key)) {
-                row.style.backgroundColor = 'green';
-            }
 
             // 새 데이터는 항상 테이블의 첫 번째 행에 추가
             tableBody.insertBefore(row, tableBody.firstChild);
@@ -263,7 +280,7 @@
                 const newData = { key: snapshot.key, data: snapshot.val() };
                 allData.push(newData); // 새 데이터를 저장
                 displayData(snapshot.key, snapshot.val()); // 새 데이터 테이블에 추가
-                playNotificationSound(); // 새 데이터가 추가될 때 소리 재생
+                showNotification(); // 새 데이터가 추가될 때 알림 표시
                 saveDataToLocalStorage(); // 새 데이터를 Local Storage에 저장
 
                 // 날짜 필터 업데이트

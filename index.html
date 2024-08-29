@@ -13,7 +13,7 @@
             text-align: center; /* 모든 셀을 기본적으로 가운데 정렬 */
         }
 
-        /* 인쇄를 위한 숨김 */
+        /* 인쇄를 위한 숨김 및 글자 크기 조정 */
         @media print {
             body * {
                 visibility: hidden;
@@ -23,6 +23,7 @@
                 position: absolute;
                 left: 0;
                 top: 0;
+                font-size: 120%; /* 글자 크기를 20% 키움 */
             }
         }
     </style>
@@ -285,9 +286,13 @@
             printableDiv.style.display = 'block'; // 인쇄 영역 표시
             printableDiv.innerText = receiptContent; // 인쇄 내용을 추가
 
-            window.print(); // 인쇄 대화상자 호출
-
-            printableDiv.style.display = 'none'; // 인쇄 후 인쇄 영역 숨김
+            // 인쇄 설정 및 호출
+            const printWindow = window.open('', '', 'height=500,width=800');
+            printWindow.document.write('<pre style="font-size: 120%;">' + receiptContent + '</pre>'); // 글자 크기를 20% 키움
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+            printWindow.close();
         }
 
         // Firebase에서 기존 데이터 불러오기 (시간 역순으로 표시)

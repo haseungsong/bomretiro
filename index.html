@@ -12,6 +12,19 @@
         th, td {
             text-align: center; /* 모든 셀을 기본적으로 가운데 정렬 */
         }
+
+        /* 인쇄를 위한 숨김 */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printable {
+                visibility: visible;
+                position: absolute;
+                left: 0;
+                top: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -39,6 +52,9 @@
 
     <!-- Notification Sound -->
     <audio id="notificationSound" src="notification.mp3" preload="auto"></audio>
+
+    <!-- 인쇄할 내용을 담는 숨겨진 영역 -->
+    <div id="printable" style="display:none;"></div>
 
     <script>
         // Firebase 설정 정보 (Firebase 콘솔에서 가져온 정보를 여기에 추가하세요)
@@ -132,7 +148,7 @@
             localStorage.setItem('prontoState', JSON.stringify(prontoState));
         }
 
-        // Pronto 상태를 Local Storage에서 불러오는 함수
+        // Pront 상태를 Local Storage에서 불러오는 함수
         function loadProntoState(key) {
             let prontoState = JSON.parse(localStorage.getItem('prontoState')) || {};
             return prontoState[key] || false;
@@ -217,9 +233,17 @@
                 saveProntoState(key, false); // Pronto 상태 저장
             };
 
-            // Pront 버튼과 Cancel 버튼 추가
+            // Print 버튼 생성
+            const printButton = document.createElement('button');
+            printButton.textContent = 'Print';
+            printButton.onclick = function() {
+                printReceipt(data); // 영수증 인쇄 함수 호출
+            };
+
+            // Pront, Cancel, Print 버튼 추가
             actionCell.appendChild(prontButton);
             actionCell.appendChild(cancelButton);
+            actionCell.appendChild(printButton);
 
             numberCell.textContent = number; // 임의 번호 표시
             dateCell.textContent = date; // 추출한 날짜 표시
@@ -245,6 +269,25 @@
 
             // 새 데이터는 항상 테이블의 첫 번째 행에 추가
             tableBody.insertBefore(row, tableBody.firstChild);
+        }
+
+        // 영수증 인쇄 함수
+        function printReceipt(data) {
+            const receiptContent = `
+                Table Number: ${data.tableNumber}\n
+                Date: ${new Date(data.timestamp).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })}\n
+                Time: ${new Date(data.timestamp).toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul' })}\n
+                Order List: ${JSON.stringify(data.orderList).replace(/[\[\]{}"]/g, '').split(',').join('\n')}\n
+                Total Amount: ${data.totalAmount}\n
+            `;
+
+            const printableDiv = document.getElementById('printable');
+            printableDiv.style.display = 'block'; // 인쇄 영역 표시
+            printableDiv.innerText = receiptContent; // 인쇄 내용을 추가
+
+            window.print(); // 인쇄 대화상자 호출
+
+            printableDiv.style.display = 'none'; // 인쇄 후 인쇄 영역 숨김
         }
 
         // Firebase에서 기존 데이터 불러오기 (시간 역순으로 표시)

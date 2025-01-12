@@ -21,16 +21,19 @@
         }
 
         th, td {
-            text-align: center;
-            border: 1px solid #ddd;
-            padding: 8px;
-            overflow-wrap: break-word;
+        text-align: center;
+        border: 1px solid #ddd;
+        padding: 4px; /* 간격을 줄임 */
+        overflow-wrap: break-word;
         }
 
         th {
             background-color: #f4f4f4;
         }
 
+        th:nth-child(5), td:nth-child(5) {
+            width: 300px; /* Order List 열을 다른 필드보다 3배 넓게 설정 */
+        }
         @media screen and (max-width: 768px) {
             table {
                 font-size: 12px;
@@ -224,7 +227,10 @@
 
             let orderList = data.orderList ? JSON.stringify(data.orderList) : ''; // 주문 목록
             orderList = orderList.replace(/[\[\]]/g, ''); // "[" 와 "]" 제거
+            orderList = orderList.replace(/."quantity"/g, '');
             orderList = orderList.split('},{').join('},<br>{'); // '},{'마다 줄 바꿈을 위해 <br> 태그 추가
+            
+            
 
             // "name": 패턴을 찾아서 제거
             orderList = orderList.replace(/"\s*name\s*":\s*"/g, '');
@@ -234,6 +240,41 @@
 
             // "{"와 "}" 문자를 제거
             orderList = orderList.replace(/{/g, '').replace(/}/g, '');
+
+            // 키워드 배열 정의
+            const blueKeywords = ['chicken', 'banban', 'pork']; // 빨간색으로 표시할 키워드
+            const orangeKeywords = ['teokpoki', 'lapokki', 'batata']; // 녹색으로 표시할 키워드
+            const yellowKeywords = [
+                "Coca", "Coca Zero", "Guaraná", "Fanta Uva", "Fanta Maracujá",
+                "Fanta Laranja", "Sprite", "Schweppes", "Soda Melancia", "Soda de Melão",
+                "Bong Bong Uva", "Bong. Morango", "Água", "H2Oh", "Valle Uva",
+                "Valle Pêssego", "Valle Goiaba", "Valle Manga", "Coca 600ml", 
+                "Zero 600ml", "Original", "Heineken", "Soju", "Sou de Fruta"
+            ].map(keyword => keyword.toLowerCase()); // 모두 소문자로 변환
+
+
+            // 특정 키워드를 포함한 줄에 색상을 적용
+            orderList = orderList
+                .split('<br>') // 줄을 '<br>' 기준으로 분리
+                .map(line => {
+                    // 파란색 키워드가 포함된 경우
+                    if (blueKeywords.some(keyword => line.toLowerCase().includes(keyword))) {
+                        return `<span style="color: red; font-weight: bold;">${line}</span>`; // 빨간색으로 스타일링
+                    }
+                    // 주황색 키워드가 포함된 경우
+                    if (orangeKeywords.some(keyword => line.toLowerCase().includes(keyword))) {
+                        return `<span style="color: green; font-weight: bold;">${line}</span>`; // 녹색으로 스타일링
+                    }
+                    // 노란색 키워드가 포함된 경우
+                    if (yellowKeywords.some(keyword => line.toLowerCase().includes(keyword))) {
+                        return `<span style="color: blue; font-weight: bold;">${line}</span>`;  // 파란란색으로 스타일링
+                    }
+                    return line; // 다른 줄은 그대로 유지
+                })
+                .join('<br>'); // 다시 줄바꿈으로 합침
+
+
+
 
             // 수량 추출: 따옴표 안의 숫자만 추출
             const qtyMatches = orderList.match(/"\d+"/g); // 따옴표 안에 있는 숫자만 추출
@@ -286,7 +327,7 @@
             dateCell.textContent = date; // 추출한 날짜 표시
             timestampCell.textContent = time; // 추출한 시간만 표시
             tableNumberCell.textContent = tableNumber; // 테이블 번호 표시
-            orderListCell.innerHTML = orderList; // 주문 목록 표시 (줄 바꿈 포함)
+            orderListCell.innerHTML = orderList; // 모든 내용을 줄바꿈으로 표시
             qtyCell.innerHTML = qtyText; // 수량 표시 (줄 바꿈 포함)
             totalAmountCell.textContent = totalAmount; // 총 금액 표시
 

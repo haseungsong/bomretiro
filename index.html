@@ -3,17 +3,13 @@
 <head>
     <meta charset="viewport" content="width=device-width, initial-scale=1.0">
     <meta charset="UTF-8">
-    <title>Firebase Realtime Database Viewer with Notification</title>
-    <!-- Firebase SDK 추가 (8.x 버전) -->
+    <title>Firebase Realtime Database Viewer with Save Option</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        /* 테이블 셀 가운데 정렬 */
         th, td {
-            text-align: center; /* 모든 셀을 기본적으로 가운데 정렬 */
+            text-align: center;
         }
-
-        /* 인쇄를 위한 숨김 및 글자 크기 조정 */
         @media print {
             body * {
                 visibility: hidden;
@@ -23,14 +19,15 @@
                 position: absolute;
                 left: 0;
                 top: 0;
-                font-size: 120%; /* 글자 크기를 20% 키움 */
-                text-align: left; /* 왼쪽 정렬 추가 */
+                font-size: 120%;
+                text-align: left;
             }
         }
     </style>
 </head>
 <body>
     <h1>Firebase Realtime Database Viewer</h1>
+    <button id="saveIcon" title="Save Table" style="font-size: 12px; cursor: pointer;">💾 Save Table</button>
     <label for="dateFilter">Filter by Date:</label>
     <select id="dateFilter">
         <option value="all">All Dates</option>
@@ -52,14 +49,10 @@
         <tbody></tbody>
     </table>
 
-    <!-- Notification Sound -->
     <audio id="notificationSound" src="notification.mp3" preload="auto"></audio>
-
-    <!-- 인쇄할 내용을 담는 숨겨진 영역 -->
     <div id="printable" style="display:none;"></div>
 
     <script>
-        // Firebase 설정 정보 (Firebase 콘솔에서 가져온 정보를 여기에 추가하세요)
         const firebaseConfig = {
             apiKey: "AIzaSyBltwkIkocgAMya7_lKglLVikl9dIzegoI",
             authDomain: "seoulchicken-fa390.firebaseapp.com",
@@ -71,311 +64,92 @@
             measurementId: "G-FRCNM1T9JB"
         };
 
-        // Firebase 초기화
         const app = firebase.initializeApp(firebaseConfig);
         const database = firebase.database(app);
 
-        const dateFilter = document.getElementById('dateFilter'); // 날짜 필터 드롭다운
-        const tableBody = document.querySelector('#dataTable tbody'); // 테이블 바디
-        const notificationSound = document.getElementById('notificationSound'); // 알림 소리
-        const enableSoundButton = document.getElementById('enableSoundButton'); // 소리 활성화 버튼
+        const dateFilter = document.getElementById('dateFilter');
+        const tableBody = document.querySelector('#dataTable tbody');
+        const notificationSound = document.getElementById('notificationSound');
+        const enableSoundButton = document.getElementById('enableSoundButton');
 
-        let soundEnabled = false; // 소리 재생 가능 여부
-        let count = 1; // 데이터 번호를 기록하기 위한 카운터
-        let allData = []; // 모든 데이터를 저장할 배열
+        let soundEnabled = false;
+        let count = 1;
+        let allData = [];
 
-        // 사용자가 버튼을 클릭하면 소리 재생 활성화
         enableSoundButton.addEventListener('click', () => {
             soundEnabled = true;
-            playNotificationSound(); // 소리가 제대로 작동하는지 테스트
-            enableSoundButton.style.display = 'none'; // 버튼 숨기기
+            enableSoundButton.style.display = 'none';
         });
 
-        // 소리 재생 함수: 소리가 자동으로 재생될 수 있도록 처리
-        function playNotificationSound() {
-            if (soundEnabled) {
-                notificationSound.volume = 1.0; // 최대 볼륨 설정
-                notificationSound.currentTime = 0; // 소리를 처음부터 재생
-                repeatSound(3); // 소리를 3번 반복 재생
-            }
-        }
+        function saveTableAsCSV() {
+            const rows = document.querySelectorAll("#dataTable tr");
+            let csvContent = "\uFEFF"; // BOM 추가로 UTF-8 인코딩 보장
 
-        // 소리 반복 재생 함수
-        function repeatSound(repeatCount) {
-            let playCount = 0;
-
-            function playAgain() {
-                if (playCount < repeatCount) {
-                    notificationSound.play().then(() => {
-                        playCount++;
-                        notificationSound.onended = playAgain; // 소리가 끝나면 다시 재생
-                    }).catch(error => {
-                        console.error("소리 재생 중 오류 발생:", error);
-                    });
-                }
-            }
-
-            playAgain(); // 첫 재생 호출
-        }
-
-        // 알림 권한 요청
-        if (Notification.permission !== "granted") {
-            Notification.requestPermission().then(permission => {
-                if (permission === "granted") {
-                    console.log("알림 권한 허용됨");
-                }
+            rows.forEach(row => {
+                const cells = row.querySelectorAll("th, td");
+                const rowData = Array.from(cells).map(cell => `"${cell.textContent.trim()}"`).join(",");
+                csvContent += rowData + "\n";
             });
+
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "table_data.csv";
+            a.click();
+            URL.revokeObjectURL(url);
         }
 
-        // 새로운 주문 알림 생성 함수
-        function showNotification() {
-            if (Notification.permission === "granted") {
-                const notification = new Notification("새로운 주문이 들어왔습니다!", {
-                    body: "클릭하여 소리를 재생하세요.",
-                    icon: "notification_icon.png" // 알림 아이콘 (원하는 이미지로 교체 가능)
-                });
+        document.getElementById("saveIcon").addEventListener("click", saveTableAsCSV);
 
-                // 사용자가 알림을 클릭하면 소리 재생
-                notification.onclick = () => {
-                    playNotificationSound();
-                    notification.close(); // 알림 닫기
-                };
-            }
-        }
-
-        // Pront 상태를 Local Storage에 저장하는 함수
-        function saveProntoState(key, isPronto) {
-            let prontoState = JSON.parse(localStorage.getItem('prontoState')) || {};
-            prontoState[key] = isPronto;
-            localStorage.setItem('prontoState', JSON.stringify(prontoState));
-        }
-
-        // Pront 상태를 Local Storage에서 불러오는 함수
-        function loadProntoState(key) {
-            let prontoState = JSON.parse(localStorage.getItem('prontoState')) || {};
-            return prontoState[key] || false;
-        }
-
-        // 데이터를 Local Storage에 저장하는 함수
-        function saveDataToLocalStorage() {
-            localStorage.setItem('firebaseData', JSON.stringify(allData));
-        }
-
-        // Local Storage에서 데이터를 불러오는 함수
-        function loadDataFromLocalStorage() {
-            const storedData = localStorage.getItem('firebaseData');
-            if (storedData) {
-                allData = JSON.parse(storedData);
-                allData.forEach(item => {
-                    displayData(item.key, item.data);
-                });
-                populateDateFilter(); // 날짜 필터에 값 추가
-            }
-        }
-
-        // 데이터를 테이블로 표시하는 함수
         function displayData(key, data) {
             const row = document.createElement('tr');
 
-            // 각 데이터 필드를 별도로 가져오기
-            const number = count++; // 데이터 번호는 1부터 시작하여 새로 추가될 때마다 증가
-            const tableNumber = data.tableNumber || ''; // 테이블 번호
-            const timestamp = data.timestamp || ''; // 타임스탬프
+            const number = count++;
+            const tableNumber = data.tableNumber || '';
+            const timestamp = data.timestamp || '';
 
-            // 타임스탬프에서 날짜와 시간 부분 분리
-            const dateObj = new Date(timestamp); // 타임스탬프를 Date 객체로 변환
-            const date = dateObj.toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' }); // 날짜만 추출
-            const time = dateObj.toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul' }); // 시간만 추출
+            const dateObj = new Date(timestamp);
+            const date = dateObj.toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' });
+            const time = dateObj.toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul' });
 
-            let orderList = data.orderList ? JSON.stringify(data.orderList) : ''; // 주문 목록
-            orderList = orderList.replace(/[\[\]]/g, ''); // "[" 와 "]" 제거
-            orderList = orderList.split('},{').join('},<br>{'); // '},{'마다 줄 바꿈을 위해 <br> 태그 추가
+            let orderList = data.orderList ? JSON.stringify(data.orderList) : '';
+            orderList = orderList.replace(/"name":\s*".*?",?/g, ''); // "name" 제거
+            orderList = orderList.replace(/[\[\]{}"]+/g, '').split(',').join('<br>');
 
-            // "name": 패턴을 찾아서 제거
-            orderList = orderList.replace(/"\s*name\s*":\s*"/g, '');
+            const totalAmount = data.totalAmount || '';
 
-            // 남은 불필요한 공백과 중괄호 제거
-            orderList = orderList.replace(/{\s*/g, '{').replace(/\s*}/g, '}');
+            const cells = [
+                number, date, time, tableNumber, orderList, '', totalAmount
+            ].map(content => {
+                const cell = document.createElement('td');
+                cell.innerHTML = content;
+                return cell;
+            });
 
-            // "{"와 "}" 문자를 제거
-            orderList = orderList.replace(/{/g, '').replace(/}/g, '');
-
-            // 수량 추출: 따옴표 안의 숫자만 추출
-            const qtyMatches = orderList.match(/"\d+"/g); // 따옴표 안에 있는 숫자만 추출
-            let qtyText = '';
-            if (qtyMatches) {
-                qtyText = qtyMatches.map(num => num.replace(/"/g, '')).join('<br>'); // 각 숫자를 줄바꿈으로 연결하여 표시
-            }
-
-            const totalAmount = data.totalAmount || ''; // 총 금액
-
-            // 각 필드를 셀로 만들어 테이블에 추가
-            const numberCell = document.createElement('td');
-            const dateCell = document.createElement('td'); // Date 셀
-            const timestampCell = document.createElement('td'); // 시간만 표시되는 셀
-            const tableNumberCell = document.createElement('td');
-            const orderListCell = document.createElement('td');
-            const qtyCell = document.createElement('td'); // Qty 셀 추가
-            const totalAmountCell = document.createElement('td');
-            const actionCell = document.createElement('td'); // Action 셀
-
-            // Pront 버튼 생성
-            const prontButton = document.createElement('button');
-            prontButton.textContent = 'Pront';
-            prontButton.onclick = function() {
-                row.style.backgroundColor = 'green'; // Pront 버튼 클릭 시 행의 배경색을 녹색으로 변경
-                saveProntoState(key, true); // Pronto 상태 저장
-            };
-
-            // Cancel 버튼 생성
-            const cancelButton = document.createElement('button');
-            cancelButton.textContent = 'Cancel';
-            cancelButton.onclick = function() {
-                row.style.backgroundColor = ''; // Cancel 버튼 클릭 시 배경색을 초기화
-                saveProntoState(key, false); // Pronto 상태 저장
-            };
-
-            // Print 버튼 생성
-            const printButton = document.createElement('button');
-            printButton.textContent = 'Print';
-            printButton.onclick = function() {
-                printReceipt(data); // 영수증 인쇄 함수 호출
-            };
-
-            // Pront, Cancel, Print 버튼 추가
-            actionCell.appendChild(prontButton);
-            actionCell.appendChild(cancelButton);
-            actionCell.appendChild(printButton);
-
-            numberCell.textContent = number; // 임의 번호 표시
-            dateCell.textContent = date; // 추출한 날짜 표시
-            timestampCell.textContent = time; // 추출한 시간만 표시
-            tableNumberCell.textContent = tableNumber; // 테이블 번호 표시
-            orderListCell.innerHTML = orderList; // 주문 목록 표시 (줄 바꿈 포함)
-            qtyCell.innerHTML = qtyText; // 수량 표시 (줄 바꿈 포함)
-            totalAmountCell.textContent = totalAmount; // 총 금액 표시
-
-            row.appendChild(numberCell);
-            row.appendChild(dateCell);
-            row.appendChild(timestampCell);
-            row.appendChild(tableNumberCell);
-            row.appendChild(orderListCell);
-            row.appendChild(qtyCell); // Qty 셀 추가
-            row.appendChild(totalAmountCell);
-            row.appendChild(actionCell); // Action 셀 추가
-
-            // Pront 상태에 따라 배경색 적용
-            if (loadProntoState(key)) {
-                row.style.backgroundColor = 'green';
-            }
-
-            // 새 데이터는 항상 테이블의 첫 번째 행에 추가
+            cells.forEach(cell => row.appendChild(cell));
             tableBody.insertBefore(row, tableBody.firstChild);
         }
 
-        // 영수증 인쇄 함수
-        function printReceipt(data) {
-            const receiptContent = `
-                Table Number: ${data.tableNumber}\n
-                Date: ${new Date(data.timestamp).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })}\n
-                Time: ${new Date(data.timestamp).toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul' })}\n
-                Order List: ${JSON.stringify(data.orderList).replace(/[\[\]{}"]/g, '').split(',').join('\n')}\n
-                Total Amount: ${data.totalAmount}\n
-            `;
-
-            const printableDiv = document.getElementById('printable');
-            printableDiv.style.display = 'block'; // 인쇄 영역 표시
-            printableDiv.innerText = receiptContent; // 인쇄 내용을 추가
-
-            // 인쇄 설정 및 호출
-            const printWindow = window.open('', '', 'height=500,width=800');
-            printWindow.document.write('<pre style="font-size: 120%; text-align: left;">' + receiptContent + '</pre>'); // 글자 크기를 20% 키우고, 왼쪽 정렬 추가
-            printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
-            printWindow.close();
-        }
-
-        // Firebase에서 기존 데이터 불러오기 (시간 역순으로 표시)
         function loadDataFromFirebase() {
-            const dbRef = database.ref('orders'); // 데이터가 저장된 정확한 경로로 설정
+            const dbRef = database.ref('orders');
             dbRef.once('value', (snapshot) => {
                 const data = snapshot.val();
-                const sortedKeys = Object.keys(data).sort((a, b) => new Date(data[b].timestamp) - new Date(data[a].timestamp)); // 타임스탬프 기준으로 역순 정렬
+                const sortedKeys = Object.keys(data).sort((a, b) => new Date(data[b].timestamp) - new Date(data[a].timestamp));
 
                 sortedKeys.forEach((key) => {
-                    // allData에 중복된 데이터가 없을 경우에만 추가
                     if (!allData.some(item => item.key === key)) {
-                        allData.push({ key, data: data[key] }); // 새 데이터를 저장
-                        displayData(key, data[key]); // 과거 데이터 테이블에 역순으로 표시
+                        allData.push({ key, data: data[key] });
+                        displayData(key, data[key]);
                     }
                 });
-
-                saveDataToLocalStorage(); // 데이터를 Local Storage에 저장
-                populateDateFilter(); // 날짜 필터에 값 추가
             });
         }
 
-        // 페이지가 로드될 때 Local Storage에서 데이터 불러오기 및 Firebase에서 데이터 가져오기
         window.onload = function() {
-            loadDataFromLocalStorage(); // Local Storage에서 기존 데이터 불러오기
-            setupRealtimeUpdates(); // 실시간 업데이트 설정
-            setTimeout(loadDataFromFirebase, 500); // Firebase에서 데이터 가져오기 (LocalStorage 데이터가 먼저 표시되도록 0.5초 대기)
+            loadDataFromFirebase();
         };
 
-        // 날짜 필터 드롭다운을 채우는 함수
-        function populateDateFilter() {
-            const uniqueDates = [...new Set(allData.map(item => new Date(item.data.timestamp).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })))]; // 중복 제거한 날짜 목록
-            uniqueDates.forEach(date => {
-                const option = document.createElement('option');
-                option.value = date;
-                option.textContent = date;
-                dateFilter.appendChild(option);
-            });
-        }
-
-        // 날짜 필터가 변경되었을 때 호출되는 함수
-        dateFilter.addEventListener('change', function() {
-            const selectedDate = dateFilter.value;
-            filterDataByDate(selectedDate);
-        });
-
-        // 선택한 날짜에 따라 데이터를 필터링하여 표시하는 함수
-        function filterDataByDate(date) {
-            tableBody.innerHTML = ''; // 기존 테이블 데이터 지우기
-            count = 1; // 카운터 초기화
-
-            allData.forEach(item => {
-                const itemDate = new Date(item.data.timestamp).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' });
-                if (date === 'all' || itemDate === date) {
-                    displayData(item.key, item.data); // 해당 날짜의 데이터만 표시
-                }
-            });
-        }
-
-        // 실시간으로 새 데이터가 추가될 때 테이블에 추가 및 알림 소리 재생
-        function setupRealtimeUpdates() {
-            const dbRef = database.ref('orders');
-            dbRef.on('child_added', (snapshot) => {
-                const newData = { key: snapshot.key, data: snapshot.val() };
-                allData.push(newData); // 새 데이터를 저장
-                displayData(snapshot.key, snapshot.val()); // 새 데이터 테이블에 추가
-                showNotification(); // 새 데이터가 추가될 때 알림 표시
-                saveDataToLocalStorage(); // 새 데이터를 Local Storage에 저장
-
-                // 날짜 필터 업데이트
-                const newDate = new Date(snapshot.val().timestamp).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' });
-                if (!Array.from(dateFilter.options).some(option => option.value === newDate)) {
-                    const option = document.createElement('option');
-                    option.value = newDate;
-                    option.textContent = newDate;
-                    dateFilter.appendChild(option);
-                }
-            });
-        }
-
-        // Local Storage에 1초마다 데이터를 저장하는 함수
-        setInterval(saveDataToLocalStorage, 1000); // 1초마다 데이터를 저장
     </script>
 </body>
 </html>

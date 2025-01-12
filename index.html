@@ -380,6 +380,34 @@
             actionCell.appendChild(prontButton);
             actionCell.appendChild(cancelButton);
             actionCell.appendChild(printButton);
+            
+            // Delete 버튼 생성
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.onclick = function () {
+                deleteRow(row, key); // deleteRow 함수 호출
+            };
+
+            // Delete 버튼 추가
+            actionCell.appendChild(deleteButton);
+
+            function deleteRow(row, key) {
+            // Firebase에서 데이터 삭제
+            const dbRef = database.ref(`orders/${key}`);
+            dbRef.remove()
+                .then(() => {
+                    // Firebase에서 데이터 삭제 후 테이블에서 행 삭제
+                    row.remove();
+                    // `allData` 배열에서 데이터 제거
+                    allData = allData.filter(item => item.key !== key);
+                    saveDataToLocalStorage(); // 변경된 데이터 Local Storage에 저장
+                    alert('행이 성공적으로 삭제되었습니다.');
+                })
+                .catch(error => {
+                    console.error('데이터 삭제 중 오류 발생:', error);
+                    alert('행 삭제에 실패했습니다.');
+                });
+        }
 
             numberCell.textContent = number; // 임의 번호 표시
             dateCell.textContent = date; // 추출한 날짜 표시

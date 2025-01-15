@@ -7,6 +7,13 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
+
+        #dailyTotal, #monthlyTotal {
+            margin-left: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -74,9 +81,11 @@
         <option value="all">All Dates</option>
     </select>
     <button id="enableSoundButton">Click to Enable Sound</button>
-
     <!-- 엑셀 다운로드 버튼 추가 -->
     <button id="downloadExcelButton">Download Excel</button>
+
+    <span id="dailyTotal" style="margin-left: 20px; font-weight: bold;">일 매출: 0</span>
+    <span id="monthlyTotal" style="margin-left: 20px; font-weight: bold;">월 매출: 0</span>
     
     <script>
         // 엑셀 파일로 데이터를 저장하는 함수
@@ -537,25 +546,45 @@
             printWindow.close();
         }
 
-        // Firebase에서 기존 데이터 불러오기 (시간 역순으로 표시)
-        function loadDataFromFirebase() {
-            const dbRef = database.ref('orders'); // 데이터가 저장된 정확한 경로로 설정
-            dbRef.once('value', (snapshot) => {
-                const data = snapshot.val();
-                const sortedKeys = Object.keys(data).sort((a, b) => new Date(data[b].timestamp) - new Date(data[a].timestamp)); // 타임스탬프 기준으로 역순 정렬
+       // Firebase에서 기존 데이터 불러오기 (시간 역순으로 표시)
+function loadDataFromFirebase() {
+    const dbRef = database.ref('orders'); // 데이터가 저장된 정확한 경로로 설정
+    dbRef.once('value', (snapshot) => {
+        const data = snapshot.val();
+        const sortedKeys = Object.keys(data).sort((a, b) => new Date(data[b].timestamp) - new Date(data[a].timestamp)); // 타임스탬프 기준으로 역순 정렬
 
-                sortedKeys.forEach((key) => {
-                    // allData에 중복된 데이터가 없을 경우에만 추가
-                    if (!allData.some(item => item.key === key)) {
-                        allData.push({ key, data: data[key] }); // 새 데이터를 저장
-                        displayData(key, data[key]); // 과거 데이터 테이블에 역순으로 표시
-                    }
-                });
+        let dailyTotalAmount = 0; // 일 매출 초기화
+        let monthlyTotalAmount = 0; // 월 매출 초기화
+        const today = new Date().toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' });
+        const currentMonth = today.split('.')[0] + '.' + today.split('.')[1]; // 현재 월 (YYYY.MM)
 
-                saveDataToLocalStorage(); // 데이터를 Local Storage에 저장
-                populateDateFilter(); // 날짜 필터에 값 추가
-            });
-        }
+        sortedKeys.forEach((key) => {
+            if (!allData.some(item => item.key === key)) {
+                allData.push({ key, data: data[key] });
+                displayData(key, data[key]);
+
+                // Total Amount 합계 계산
+                const totalAmount = parseFloat(data[key].totalAmount || 0); // 총 금액이 없을 경우 0 처리
+                const itemDate = new Date(data[key].timestamp).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' });
+                const itemMonth = itemDate.split('.')[0] + '.' + itemDate.split('.')[1]; // 연도와 월만 추출
+
+                if (itemDate === today) {
+                    dailyTotalAmount += totalAmount; // 오늘 날짜의 총 금액
+                }
+                if (itemMonth === currentMonth) {
+                    monthlyTotalAmount += totalAmount; // 현재 월의 총 금액
+                }
+            }
+        });
+
+        // 일 매출 및 월 매출 업데이트
+        document.getElementById('dailyTotal').textContent = `일 매출: ${dailyTotalAmount.toLocaleString('ko-KR')} 원`;
+        document.getElementById('monthlyTotal').textContent = `월 매출: ${monthlyTotalAmount.toLocaleString('ko-KR')} 원`;
+
+        saveDataToLocalStorage(); // 데이터를 Local Storage에 저장
+        populateDateFilter(); // 날짜 필터에 값 추가
+    });
+}
 
        
 
@@ -577,16 +606,37 @@
         });
 
         // 선택한 날짜에 따라 데이터를 필터링하여 표시하는 함수
+        // 선택한 날짜에 따라 데이터를 필터링하여 표시하는 함수
         function filterDataByDate(date) {
             tableBody.innerHTML = ''; // 기존 테이블 데이터 지우기
             count = 1; // 카운터 초기화
 
+            let dailyTotalAmount = 0; // 일 매출 초기화
+            let monthlyTotalAmount = 0; // 월 매출 초기화
+
             allData.forEach(item => {
                 const itemDate = new Date(item.data.timestamp).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' });
+                const itemMonth = itemDate.split('.')[0] + '.' + itemDate.split('.')[1]; // 연도와 월만 추출 (YYYY.MM)
+
+                // Total Amount 필드에서 숫자만 추출
+                const totalAmountText = item.data.totalAmount || '0'; // null 또는 undefined일 경우 기본값 0 설정
+                const totalAmount = parseFloat(totalAmountText.replace(/[^0-9.-]+/g, '')) || 0; // 숫자 이외의 문자 제거
+
                 if (date === 'all' || itemDate === date) {
                     displayData(item.key, item.data); // 해당 날짜의 데이터만 표시
                 }
+
+                if (itemDate === date) {
+                    dailyTotalAmount += totalAmount; // 선택된 날짜의 총 금액
+                }
+                if (date === 'all' || itemMonth === date.split('.')[0] + '.' + date.split('.')[1]) {
+                    monthlyTotalAmount += totalAmount; // 선택된 월의 총 금액
+                }
             });
+
+            // 일 매출 및 월 매출 업데이트
+            document.getElementById('dailyTotal').textContent = `일 매출: ${dailyTotalAmount.toLocaleString('ko-KR')} R$`;
+            document.getElementById('monthlyTotal').textContent = `월 매출: ${monthlyTotalAmount.toLocaleString('ko-KR')} R$`;
         }
 
         // 실시간으로 새 데이터가 추가될 때 테이블에 추가 및 알림 소리 재생

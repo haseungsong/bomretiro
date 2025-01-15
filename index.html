@@ -368,8 +368,8 @@
 
             // 타임스탬프에서 날짜와 시간 부분 분리
             const dateObj = new Date(timestamp); // 타임스탬프를 Date 객체로 변환
-            const date = dateObj.toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' }); // 날짜만 추출
-            const time = dateObj.toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul' }); // 시간만 추출
+            const date = dateObj.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }); // 날짜만 추출
+            const time = dateObj.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' }); // 시간만 추출
 
             let orderList = data.orderList ? JSON.stringify(data.orderList) : ''; // 주문 목록
             orderList = orderList.replace(/[\[\]]/g, ''); // "[" 와 "]" 제거
@@ -388,7 +388,7 @@
             orderList = orderList.replace(/{/g, '').replace(/}/g, '');
 
             // 키워드 배열 정의
-            const blueKeywords = ['chicken', 'Meia/Meia', 'pork']; // 빨간색으로 표시할 키워드
+            const blueKeywords = ['chicken', 'meia/meia', 'pork']; // 빨간색으로 표시할 키워드
             const orangeKeywords = ['teokpoki', 'lapokki', 'batata']; // 녹색으로 표시할 키워드
             const yellowKeywords = [
                 "Coca", "Coca Zero", "Guaraná", "Fanta Uva", "Fanta Maracujá",
@@ -527,8 +527,8 @@
         function printReceipt(data) {
             const receiptContent = `
                 Table Number: ${data.tableNumber}\n
-                Date: ${new Date(data.timestamp).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })}\n
-                Time: ${new Date(data.timestamp).toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul' })}\n
+                Date: ${new Date(data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}\n
+                Time: ${new Date(data.timestamp).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' })}\n
                 Order List: ${JSON.stringify(data.orderList).replace(/[\[\]{}"]/g, '').split(',').join('\n')}\n
                 Total Amount: ${data.totalAmount}\n
             `;
@@ -555,8 +555,8 @@ function loadDataFromFirebase() {
 
         let dailyTotalAmount = 0; // 일 매출 초기화
         let monthlyTotalAmount = 0; // 월 매출 초기화
-        const today = new Date().toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' });
-        const currentMonth = today.split('.')[0] + '.' + today.split('.')[1]; // 현재 월 (YYYY.MM)
+        const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+        const currentMonth = today.split('/')[1] + '/' + today.split('/')[2]; // 현재 월 (MM/YYYY)
 
         sortedKeys.forEach((key) => {
             if (!allData.some(item => item.key === key)) {
@@ -590,7 +590,8 @@ function loadDataFromFirebase() {
 
         // 날짜 필터 드롭다운을 채우는 함수
         function populateDateFilter() {
-            const uniqueDates = [...new Set(allData.map(item => new Date(item.data.timestamp).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })))]; // 중복 제거한 날짜 목록
+            const uniqueDates = [...new Set(allData.map(item => new Date(item.data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })))];
+
             uniqueDates.forEach(date => {
                 const option = document.createElement('option');
                 option.value = date;
@@ -615,8 +616,8 @@ function loadDataFromFirebase() {
             let monthlyTotalAmount = 0; // 월 매출 초기화
 
             allData.forEach(item => {
-                const itemDate = new Date(item.data.timestamp).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' });
-                const itemMonth = itemDate.split('.')[0] + '.' + itemDate.split('.')[1]; // 연도와 월만 추출 (YYYY.MM)
+                const itemDate = new Date(item.data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+                const itemMonth = itemDate.split('/')[1] + '/' + itemDate.split('/')[2]; // 월/연도 추출 (MM/YYYY)
 
                 // Total Amount 필드에서 숫자만 추출
                 const totalAmountText = item.data.totalAmount || '0'; // null 또는 undefined일 경우 기본값 0 설정

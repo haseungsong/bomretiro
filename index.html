@@ -607,38 +607,57 @@ function loadDataFromFirebase() {
         });
 
         // 선택한 날짜에 따라 데이터를 필터링하여 표시하는 함수
-        // 선택한 날짜에 따라 데이터를 필터링하여 표시하는 함수
         function filterDataByDate(date) {
-            tableBody.innerHTML = ''; // 기존 테이블 데이터 지우기
-            count = 1; // 카운터 초기화
+        tableBody.innerHTML = ''; // 기존 테이블 데이터 지우기
+        count = 1; // 카운터 초기화
 
-            let dailyTotalAmount = 0; // 일 매출 초기화
-            let monthlyTotalAmount = 0; // 월 매출 초기화
+        let dailyTotalAmount = 0; // 일 매출 초기화
+        let monthlyTotalAmount = 0; // 월 매출 초기화
 
-            allData.forEach(item => {
-                const itemDate = new Date(item.data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-                const itemMonth = itemDate.split('/')[1] + '/' + itemDate.split('/')[2]; // 월/연도 추출 (MM/YYYY)
+        // 선택한 날짜를 DD-MM-YYYY 형식으로 분리
+        const selectedDateParts = date.split('/'); // 'DD/MM/YYYY' 형식 분리
+        const selectedDay = parseInt(selectedDateParts[0], 10);
+        const selectedMonth = parseInt(selectedDateParts[1], 10); // 월은 1부터 시작
+        const selectedYear = parseInt(selectedDateParts[2], 10);
 
-                // Total Amount 필드에서 숫자만 추출
-                const totalAmountText = item.data.totalAmount || '0'; // null 또는 undefined일 경우 기본값 0 설정
-                const totalAmount = parseFloat(totalAmountText.replace(/[^0-9.-]+/g, '')) || 0; // 숫자 이외의 문자 제거
+        // 월 시작과 선택된 날짜의 끝 계산
+        const startOfMonth = new Date(selectedYear, selectedMonth - 1, 1); // 해당 월의 1일
+        const endOfSelectedDay = new Date(selectedYear, selectedMonth - 1, selectedDay, 23, 59, 59); // 선택된 날짜의 마지막 시간
 
-                if (date === 'all' || itemDate === date) {
-                    displayData(item.key, item.data); // 해당 날짜의 데이터만 표시
-                }
+        allData.forEach(item => {
+            const itemDateObj = new Date(item.data.timestamp); // 데이터의 타임스탬프를 Date 객체로 변환
+            const itemDay = itemDateObj.getDate();
+            const itemMonth = itemDateObj.getMonth() + 1; // 월은 0부터 시작하므로 +1
+            const itemYear = itemDateObj.getFullYear();
 
-                if (itemDate === date) {
-                    dailyTotalAmount += totalAmount; // 선택된 날짜의 총 금액
-                }
-                if (date === 'all' || itemMonth === date.split('.')[0] + '.' + date.split('.')[1]) {
-                    monthlyTotalAmount += totalAmount; // 선택된 월의 총 금액
-                }
-            });
+            // Total Amount 필드에서 숫자만 추출
+            const totalAmountText = item.data.totalAmount || '0'; // null 또는 undefined일 경우 기본값 0 설정
+            const totalAmount = parseFloat(totalAmountText.replace(/[^0-9.-]+/g, '')) || 0; // 숫자 이외의 문자 제거
 
-            // 일 매출 및 월 매출 업데이트
-            document.getElementById('dailyTotal').textContent = `일 매출: ${dailyTotalAmount.toLocaleString('ko-KR')} R$`;
-            document.getElementById('monthlyTotal').textContent = `월 매출: ${monthlyTotalAmount.toLocaleString('ko-KR')} R$`;
-        }
+            // 일 매출 계산 (선택한 날짜와 동일한 경우)
+            if (
+                itemDay === selectedDay &&
+                        itemMonth === selectedMonth &&
+                        itemYear === selectedYear
+                    ) {
+                        displayData(item.key, item.data); // 해당 날짜의 데이터만 표시
+                        dailyTotalAmount += totalAmount; // 선택된 날짜의 총 금액
+                    }
+
+                    // 월 매출 계산 (해당 월 1일부터 선택된 날짜까지)
+                    if (
+                        itemDateObj >= startOfMonth &&
+                        itemDateObj <= endOfSelectedDay
+                    ) {
+                        monthlyTotalAmount += totalAmount;
+                    }
+                });
+
+                // 일 매출 및 월 매출 업데이트
+                document.getElementById('dailyTotal').textContent = `일 매출: ${dailyTotalAmount.toLocaleString('ko-KR')} 원`;
+                document.getElementById('monthlyTotal').textContent = `월 매출: ${monthlyTotalAmount.toLocaleString('ko-KR')} 원`;
+            }
+
 
         // 실시간으로 새 데이터가 추가될 때 테이블에 추가 및 알림 소리 재생
         function setupRealtimeUpdates() {

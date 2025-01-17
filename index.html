@@ -525,26 +525,62 @@
 
         // 영수증 인쇄 함수
         function printReceipt(data) {
+            // 출력할 내용을 HTML 형식으로 구성
             const receiptContent = `
-                Table Number: ${data.tableNumber}\n
-                Date: ${new Date(data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}\n
-                Time: ${new Date(data.timestamp).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' })}\n
-                Order List: ${JSON.stringify(data.orderList).replace(/[\[\]{}"]/g, '').split(',').join('\n')}\n
-                Total Amount: ${data.totalAmount}\n
+                <div style="font-size: 12px; line-height: 1.5;">
+                    <p><strong>Table Number:</strong> ${data.tableNumber || ''}</p>
+                    <p><strong>Date:</strong> ${new Date(data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</p>
+                    <p><strong>Time:</strong> ${new Date(data.timestamp).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</p>
+                    <p><strong>Order List:</strong></p>
+                    <p>${JSON.stringify(data.orderList || {})
+                        .replace(/[\[\]{}"]/g, '')
+                        .split(',')
+                        .join('<br>')}</p>
+                    <p><strong>Total Amount:</strong> ${data.totalAmount || ''}</p>
+                </div>
             `;
 
-            const printableDiv = document.getElementById('printable');
-            printableDiv.style.display = 'block'; // 인쇄 영역 표시
-            printableDiv.innerText = receiptContent; // 인쇄 내용을 추가
-
-            // 인쇄 설정 및 호출
-            const printWindow = window.open('', '', 'height=500,width=800');
-            printWindow.document.write('<pre style="font-size: 120%; text-align: left;">' + receiptContent + '</pre>'); // 글자 크기를 20% 키우고, 왼쪽 정렬 추가
+            // 새 창에서 출력 준비
+            const printWindow = window.open('', '', 'height=500,width=400');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Receipt</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 0;
+                            padding: 0;
+                        }
+                        div {
+                            width: 80mm; /* 영수증 폭 */
+                            font-size: 12px;
+                            line-height: 1.5;
+                        }
+                        @media print {
+                            body {
+                                margin: 0;
+                                padding: 0;
+                            }
+                            div {
+                                page-break-after: avoid; /* 페이지 나누기 방지 */
+                                margin: 0;
+                                padding: 0;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${receiptContent}
+                </body>
+                </html>
+            `);
             printWindow.document.close();
             printWindow.focus();
             printWindow.print();
             printWindow.close();
         }
+    
 
        // Firebase에서 기존 데이터 불러오기 (시간 역순으로 표시)
 function loadDataFromFirebase() {

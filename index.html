@@ -381,7 +381,7 @@
             // 타임스탬프에서 날짜와 시간 부분 분리
             const dateObj = new Date(timestamp); // 타임스탬프를 Date 객체로 변환
             const date = dateObj.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }); // 날짜만 추출
-            const time = dateObj.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' }); // 시간만 추출
+            const time = dateObj.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false });
 
             let orderList = data.orderList ? JSON.stringify(data.orderList) : ''; // 주문 목록
             orderList = orderList.replace(/[\[\]]/g, ''); // "[" 와 "]" 제거

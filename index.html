@@ -718,7 +718,7 @@ function loadDataFromFirebase() {
                 saveDataToLocalStorage(); // 새 데이터를 Local Storage에 저장
 
                 // 날짜 필터 업데이트
-                const newDate = new Date(snapshot.val().timestamp).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' });
+                const newDate = new Date(snapshot.val().timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }); // 브라질 시간대와 포맷으로 변경
                 if (!Array.from(dateFilter.options).some(option => option.value === newDate)) {
                     const option = document.createElement('option');
                     option.value = newDate;

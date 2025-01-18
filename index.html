@@ -98,8 +98,8 @@
         // 테이블에서 데이터 읽기
         allData.forEach((item, index) => {
             const data = item.data;
-            const date = new Date(data.timestamp).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' });
-            const time = new Date(data.timestamp).toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul' });
+            const date = new Date(data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+            const time = new Date(data.timestamp).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' });
             const orderList = JSON.stringify(data.orderList)
                 .replace(/[\[\]{}"]/g, '')
                 .split(',')
@@ -613,7 +613,7 @@ function loadDataFromFirebase() {
 
                 // Total Amount 합계 계산
                 const totalAmount = parseFloat(data[key].totalAmount || 0); // 총 금액이 없을 경우 0 처리
-                const itemDate = new Date(data[key].timestamp).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' });
+                const itemDate = new Date(data[key].timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }); // 브라질 시간대와 포맷 적용
                 const itemMonth = itemDate.split('.')[0] + '.' + itemDate.split('.')[1]; // 연도와 월만 추출
 
                 if (itemDate === today) {

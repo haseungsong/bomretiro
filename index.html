@@ -725,8 +725,37 @@ function loadDataFromFirebase() {
                     option.textContent = newDate;
                     dateFilter.appendChild(option);
                 }
-            });
-        }        
+
+                // **추가된 코드: 실시간 매출 업데이트**
+        updateSales(newData.data);
+    });
+}
+
+        // **새로운 함수 추가: 매출 업데이트 처리**
+        function updateSales(newData) {
+            const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+            const currentMonth = today.split('/')[1] + '/' + today.split('/')[2]; // 현재 월 (MM/YYYY)
+
+            const totalAmount = parseFloat(newData.totalAmount || 0); // 새 데이터의 총 금액
+            const itemDate = new Date(newData.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+            const itemMonth = itemDate.split('/')[1] + '/' + itemDate.split('/')[2];
+
+            // 조건에 따라 매출 업데이트
+            let dailyTotalAmount = parseFloat(document.getElementById('dailyTotal').textContent.replace(/[^0-9.-]+/g, '')) || 0;
+            let monthlyTotalAmount = parseFloat(document.getElementById('monthlyTotal').textContent.replace(/[^0-9.-]+/g, '')) || 0;
+
+            if (itemDate === today) {
+                dailyTotalAmount += totalAmount; // 오늘 날짜의 총 금액 추가
+            }
+            if (itemMonth === currentMonth) {
+                monthlyTotalAmount += totalAmount; // 현재 월의 총 금액 추가
+            }
+
+            // UI 업데이트
+            document.getElementById('dailyTotal').textContent = `일 매출: ${dailyTotalAmount.toLocaleString('ko-KR')} 원`;
+            document.getElementById('monthlyTotal').textContent = `월 매출: ${monthlyTotalAmount.toLocaleString('ko-KR')} 원`;
+        }
+        
 
         // Local Storage에 1초마다 데이터를 저장하는 함수
         setInterval(saveDataToLocalStorage, 1000); // 1초마다 데이터를 저장

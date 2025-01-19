@@ -119,7 +119,7 @@
 
         // CSV 포맷으로 변환
         const csvContent = tableData
-            .map(row => row.map(field => `"${field}"`).join(','))
+            .map(row => row.map(field => "${field}").join(','))
             .join('\r\n');
 
         // UTF-8 BOM 추가
@@ -196,7 +196,7 @@
         // 비밀번호 입력 모달 생성
         const passwordModal = document.createElement("div");
         passwordModal.id = "passwordModal";
-        passwordModal.style.cssText = `
+        passwordModal.style.cssText = 
             position: fixed;
             top: 0;
             left: 0;
@@ -207,10 +207,10 @@
             justify-content: center;
             align-items: center;
             z-index: 9999;
-        `;
+        ;
 
         // 모달 내용 구성
-        passwordModal.innerHTML = `
+        passwordModal.innerHTML = 
             <div style="
                 background: #ffffff; 
                 padding: 30px 20px; 
@@ -246,7 +246,7 @@
                     transition: background 0.3s ease;
                 ">확인</button>
             </div>
-        `;
+        ;
 
         document.body.appendChild(passwordModal);
 
@@ -417,15 +417,15 @@
                 .map(line => {
                     // 파란색 키워드가 포함된 경우
                     if (blueKeywords.some(keyword => line.toLowerCase().includes(keyword))) {
-                        return `<span style="color: red; font-weight: bold;">${line}</span>`; // 빨간색으로 스타일링
+                        return <span style="color: red; font-weight: bold;">${line}</span>; // 빨간색으로 스타일링
                     }
                     // 주황색 키워드가 포함된 경우
                     if (orangeKeywords.some(keyword => line.toLowerCase().includes(keyword))) {
-                        return `<span style="color: green; font-weight: bold;">${line}</span>`; // 녹색으로 스타일링
+                        return <span style="color: green; font-weight: bold;">${line}</span>; // 녹색으로 스타일링
                     }
                     // 노란색 키워드가 포함된 경우
                     if (yellowKeywords.some(keyword => line.toLowerCase().includes(keyword))) {
-                        return `<span style="color: blue; font-weight: bold;">${line}</span>`;  // 파란란색으로 스타일링
+                        return <span style="color: blue; font-weight: bold;">${line}</span>;  // 파란란색으로 스타일링
                     }
                     return line; // 다른 줄은 그대로 유지
                 })
@@ -493,12 +493,12 @@
 
             function deleteRow(row, key) {
             // Firebase에서 데이터 삭제
-            const dbRef = database.ref(`orders/${key}`);
+            const dbRef = database.ref(orders/${key});
             dbRef.remove()
                 .then(() => {
                     // Firebase에서 데이터 삭제 후 테이블에서 행 삭제
                     row.remove();
-                    // `allData` 배열에서 데이터 제거
+                    // allData 배열에서 데이터 제거
                     allData = allData.filter(item => item.key !== key);
                     saveDataToLocalStorage(); // 변경된 데이터 Local Storage에 저장
                     alert('행이 성공적으로 삭제되었습니다.');
@@ -538,7 +538,7 @@
         // 영수증 인쇄 함수
         function printReceipt(data) {
             // 출력할 내용을 HTML 형식으로 구성
-            const receiptContent = `
+            const receiptContent = 
                 <div style="font-size: 12px; line-height: 1.5;">
                     <p><strong>Table Number:</strong> ${data.tableNumber || ''}</p>
                     <p><strong>Date:</strong> ${new Date(data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</p>
@@ -550,11 +550,11 @@
                         .join('<br>')}</p>
                     <p><strong>Total Amount:</strong> ${data.totalAmount || ''}</p>
                 </div>
-            `;
+            ;
 
             // 새 창에서 출력 준비
             const printWindow = window.open('', '', 'height=500,width=400');
-            printWindow.document.write(`
+            printWindow.document.write(
                 <html>
                 <head>
                     <title>Receipt</title>
@@ -586,7 +586,7 @@
                     ${receiptContent}
                 </body>
                 </html>
-            `);
+            );
             printWindow.document.close();
             printWindow.focus();
             printWindow.print();
@@ -627,8 +627,8 @@ function loadDataFromFirebase() {
         });
 
         // 일 매출 및 월 매출 업데이트
-        document.getElementById('dailyTotal').textContent = `일 매출: ${dailyTotalAmount.toLocaleString('ko-KR')} 원`;
-        document.getElementById('monthlyTotal').textContent = `월 매출: ${monthlyTotalAmount.toLocaleString('ko-KR')} 원`;
+        document.getElementById('dailyTotal').textContent = 일 매출: ${dailyTotalAmount.toLocaleString('ko-KR')} 원;
+        document.getElementById('monthlyTotal').textContent = 월 매출: ${monthlyTotalAmount.toLocaleString('ko-KR')} 원;
 
         saveDataToLocalStorage(); // 데이터를 Local Storage에 저장
         populateDateFilter(); // 날짜 필터에 값 추가
@@ -729,8 +729,8 @@ function loadDataFromFirebase() {
     }
 
     // 일 매출 및 월 매출 업데이트
-    document.getElementById('dailyTotal').textContent = `일 매출: ${dailyTotalAmount.toLocaleString('ko-KR')} 원`;
-    document.getElementById('monthlyTotal').textContent = `월 매출: ${monthlyTotalAmount.toLocaleString('ko-KR')} 원`;
+    document.getElementById('dailyTotal').textContent = 일 매출: ${dailyTotalAmount.toLocaleString('ko-KR')} 원;
+    document.getElementById('monthlyTotal').textContent = 월 매출: ${monthlyTotalAmount.toLocaleString('ko-KR')} 원;
 }
 
         // 실시간으로 새 데이터가 추가될 때 테이블에 추가 및 알림 소리 재생
@@ -758,6 +758,9 @@ function loadDataFromFirebase() {
 
             saveDataToLocalStorage(); // 새 데이터를 Local Storage에 저장
             updateSales(newData.data); // 실시간 매출 업데이트
+
+            // 새 주문 자동 출력 추가
+            printOrder(newData.data); // 새로운 데이터에 대해 자동 출력 실행
         }
 
         // 날짜 필터 업데이트
@@ -777,8 +780,30 @@ function loadDataFromFirebase() {
             showNotification(); // 새 데이터가 추가될 때 알림 표시
         }
     });
-
 }
+
+        // 새 주문 출력 함수
+        function printOrder(data) {
+            const receiptContent = 
+                Table Number: ${data.tableNumber || ''}
+                Date: ${new Date(data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
+                Time: ${new Date(data.timestamp).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
+                Order List:
+                ${JSON.stringify(data.orderList || {})
+                    .replace(/[\[\]{}"]/g, '')
+                    .split(',')
+                    .join('\n')}
+                Total Amount: ${data.totalAmount || ''}
+            ;
+
+            // 출력할 내용을 DOM에 추가
+            const printableArea = document.getElementById('printable');
+            printableArea.innerHTML = <pre>${receiptContent}</pre>;
+
+            // 자동 프린트
+            window.print();
+        }
+
 
         // **새로운 함수 추가: 매출 업데이트 처리**
         function updateSales(newData) {
@@ -804,8 +829,8 @@ function loadDataFromFirebase() {
         }
 
         // UI 업데이트
-        document.getElementById('dailyTotal').textContent = `일 매출: ${dailyTotalAmount.toLocaleString('ko-KR')} 원`;
-        document.getElementById('monthlyTotal').textContent = `월 매출: ${monthlyTotalAmount.toLocaleString('ko-KR')} 원`;
+        document.getElementById('dailyTotal').textContent = 일 매출: ${dailyTotalAmount.toLocaleString('ko-KR')} 원;
+        document.getElementById('monthlyTotal').textContent = 월 매출: ${monthlyTotalAmount.toLocaleString('ko-KR')} 원;
     }
         
 

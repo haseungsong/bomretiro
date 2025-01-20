@@ -21,7 +21,9 @@
         }
 
         table {
-            width: 100%;
+            width: 48%; /* 테이블 너비를 각각 48%로 설정 */
+            margin: 1%;
+            float: left; /* 나란히 배치 */
             border-collapse: collapse;
             word-wrap: break-word;
             table-layout: fixed;
@@ -43,7 +45,8 @@
         }
         @media screen and (max-width: 768px) {
             table {
-                font-size: 12px;
+                width: 100%; /* 모바일에서는 전체 폭을 차지 */
+                float: none; /* 세로로 배치 */
             }
 
             th, td {
@@ -151,6 +154,26 @@
                 <th>Order List</th>
                 <th>Qty</th>
                 <th>Total Amount</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <!-- 왼쪽: 배달 전용 테이블 -->
+    <table id="deliveryTable" border="1" cellpadding="5" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Number</th>
+                <th>Date</th>
+                <th>Timestamp</th>
+                <th>Table Number</th>
+                <th>Order List</th>
+                <th>Qty</th>
+                <th>Total Amount</th>
+                <th>Name</th>
+                <th>Contact</th>
+                <th>Address</th>
                 <th>Action</th>
             </tr>
         </thead>
@@ -370,128 +393,126 @@
         }
 
         // 데이터를 테이블로 표시하는 함수
-        function displayData(key, data) {
-            const row = document.createElement('tr');
+        // 데이터를 테이블로 표시하는 함수 (최종 완성)
+    function displayData(key, data) {
+        // 테이블 선택: tableNumber가 99면 오른쪽 테이블, 아니면 왼쪽 테이블
+        const targetTableBody = data.tableNumber === 99 ? 
+            document.querySelector('#deliveryTable tbody') : 
+            document.querySelector('#dataTable tbody');
 
-            // 각 데이터 필드를 별도로 가져오기
-            const number = count++; // 데이터 번호는 1부터 시작하여 새로 추가될 때마다 증가
-            const tableNumber = data.tableNumber || ''; // 테이블 번호
-            const timestamp = data.timestamp || ''; // 타임스탬프
+        const row = document.createElement('tr');
 
-            // 타임스탬프에서 날짜와 시간 부분 분리
-            const dateObj = new Date(timestamp); // 타임스탬프를 Date 객체로 변환
-            const date = dateObj.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }); // 날짜만 추출
-            const time = dateObj.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false });
+        // 각 데이터 필드를 별도로 가져오기
+        const number = count++; // 데이터 번호는 1부터 시작하여 새로 추가될 때마다 증가
+        const tableNumber = data.tableNumber || ''; // 테이블 번호
+        const timestamp = data.timestamp || ''; // 타임스탬프
 
-            let orderList = data.orderList ? JSON.stringify(data.orderList) : ''; // 주문 목록
-            orderList = orderList.replace(/[\[\]]/g, ''); // "[" 와 "]" 제거
-            orderList = orderList.replace(/."quantity"/g, '');
-            orderList = orderList.split('},{').join('},<br>{'); // '},{'마다 줄 바꿈을 위해 <br> 태그 추가
-            
-            
+        // 타임스탬프에서 날짜와 시간 부분 분리
+        const dateObj = new Date(timestamp); // 타임스탬프를 Date 객체로 변환
+        const date = dateObj.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }); // 날짜만 추출
+        const time = dateObj.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false });
 
-            // "name": 패턴을 찾아서 제거
-            orderList = orderList.replace(/"\s*name\s*":\s*"/g, '');
+        let orderList = data.orderList ? JSON.stringify(data.orderList) : ''; // 주문 목록
+        orderList = orderList.replace(/[\[\]]/g, ''); // "[" 와 "]" 제거
+        orderList = orderList.replace(/."quantity"/g, '');
+        orderList = orderList.split('},{').join('},<br>{'); // '},{'마다 줄 바꿈을 위해 <br> 태그 추가
 
-            // 남은 불필요한 공백과 중괄호 제거
-            orderList = orderList.replace(/{\s*/g, '{').replace(/\s*}/g, '}');
+        // "name": 패턴을 찾아서 제거
+        orderList = orderList.replace(/"\s*name\s*":\s*"/g, '');
 
-            // "{"와 "}" 문자를 제거
-            orderList = orderList.replace(/{/g, '').replace(/}/g, '');
+        // 남은 불필요한 공백과 중괄호 제거
+        orderList = orderList.replace(/{\s*/g, '{').replace(/\s*}/g, '}');
 
-            // 키워드 배열 정의
-            const blueKeywords = ['chicken', 'meia/meia', 'pork']; // 빨간색으로 표시할 키워드
-            const orangeKeywords = ['teokpoki', 'lapokki', 'batata']; // 녹색으로 표시할 키워드
-            const yellowKeywords = [
-                "Coca", "Coca Zero", "Guaraná", "Fanta Uva", "Fanta Maracujá",
-                "Fanta Laranja", "Sprite", "Schweppes", "Soda Melancia", "Soda de Melão",
-                "Bong Bong Uva", "Bong. Morango", "Água", "H2Oh", "Valle Uva",
-                "Valle Pêssego", "Valle Goiaba", "Valle Manga", "Coca 600ml", 
-                "Zero 600ml", "Original", "Heineken", "Soju", "Sou de Fruta"
-            ].map(keyword => keyword.toLowerCase()); // 모두 소문자로 변환
+        // "{"와 "}" 문자를 제거
+        orderList = orderList.replace(/{/g, '').replace(/}/g, '');
 
+        // 키워드 배열 정의
+        const blueKeywords = ['chicken', 'meia/meia', 'pork']; // 빨간색으로 표시할 키워드
+        const orangeKeywords = ['teokpoki', 'lapokki', 'batata']; // 녹색으로 표시할 키워드
+        const yellowKeywords = [
+            "Coca", "Coca Zero", "Guaraná", "Fanta Uva", "Fanta Maracujá",
+            "Fanta Laranja", "Sprite", "Schweppes", "Soda Melancia", "Soda de Melão",
+            "Bong Bong Uva", "Bong. Morango", "Água", "H2Oh", "Valle Uva",
+            "Valle Pêssego", "Valle Goiaba", "Valle Manga", "Coca 600ml", 
+            "Zero 600ml", "Original", "Heineken", "Soju", "Sou de Fruta"
+        ].map(keyword => keyword.toLowerCase()); // 모두 소문자로 변환
 
-            // 특정 키워드를 포함한 줄에 색상을 적용
-            orderList = orderList
-                .split('<br>') // 줄을 '<br>' 기준으로 분리
-                .map(line => {
-                    // 파란색 키워드가 포함된 경우
-                    if (blueKeywords.some(keyword => line.toLowerCase().includes(keyword))) {
-                        return `<span style="color: red; font-weight: bold;">${line}</span>`; // 빨간색으로 스타일링
-                    }
-                    // 주황색 키워드가 포함된 경우
-                    if (orangeKeywords.some(keyword => line.toLowerCase().includes(keyword))) {
-                        return `<span style="color: green; font-weight: bold;">${line}</span>`; // 녹색으로 스타일링
-                    }
-                    // 노란색 키워드가 포함된 경우
-                    if (yellowKeywords.some(keyword => line.toLowerCase().includes(keyword))) {
-                        return `<span style="color: blue; font-weight: bold;">${line}</span>`;  // 파란란색으로 스타일링
-                    }
-                    return line; // 다른 줄은 그대로 유지
-                })
-                .join('<br>'); // 다시 줄바꿈으로 합침
+        // 특정 키워드를 포함한 줄에 색상을 적용
+        orderList = orderList
+            .split('<br>') // 줄을 '<br>' 기준으로 분리
+            .map(line => {
+                // 파란색 키워드가 포함된 경우
+                if (blueKeywords.some(keyword => line.toLowerCase().includes(keyword))) {
+                    return `<span style="color: red; font-weight: bold;">${line}</span>`; // 빨간색으로 스타일링
+                }
+                // 주황색 키워드가 포함된 경우
+                if (orangeKeywords.some(keyword => line.toLowerCase().includes(keyword))) {
+                    return `<span style="color: green; font-weight: bold;">${line}</span>`; // 녹색으로 스타일링
+                }
+                // 노란색 키워드가 포함된 경우
+                if (yellowKeywords.some(keyword => line.toLowerCase().includes(keyword))) {
+                    return `<span style="color: blue; font-weight: bold;">${line}</span>`;  // 파란색으로 스타일링
+                }
+                return line; // 다른 줄은 그대로 유지
+            })
+            .join('<br>'); // 다시 줄바꿈으로 합침
 
+        // 수량 추출: 따옴표 안의 숫자만 추출
+        const qtyMatches = orderList.match(/"\d+"/g); // 따옴표 안에 있는 숫자만 추출
+        let qtyText = '';
+        if (qtyMatches) {
+            qtyText = qtyMatches.map(num => num.replace(/"/g, '')).join('<br>'); // 각 숫자를 줄바꿈으로 연결하여 표시
+        }
 
+        const totalAmount = data.totalAmount || ''; // 총 금액
 
+        // 각 필드를 셀로 만들어 테이블에 추가
+        const numberCell = document.createElement('td');
+        const dateCell = document.createElement('td'); // Date 셀
+        const timestampCell = document.createElement('td'); // 시간만 표시되는 셀
+        const tableNumberCell = document.createElement('td');
+        const orderListCell = document.createElement('td');
+        const qtyCell = document.createElement('td'); // Qty 셀 추가
+        const totalAmountCell = document.createElement('td');
+        const actionCell = document.createElement('td'); // Action 셀
 
-            // 수량 추출: 따옴표 안의 숫자만 추출
-            const qtyMatches = orderList.match(/"\d+"/g); // 따옴표 안에 있는 숫자만 추출
-            let qtyText = '';
-            if (qtyMatches) {
-                qtyText = qtyMatches.map(num => num.replace(/"/g, '')).join('<br>'); // 각 숫자를 줄바꿈으로 연결하여 표시
-            }
+        // Pront 버튼 생성
+        const prontButton = document.createElement('button');
+        prontButton.textContent = 'Pronto';
+        prontButton.onclick = function() {
+            row.style.backgroundColor = '#2F4F4F'; // Pront 버튼 클릭 시 행의 배경색을 어두운 회색으로 변경
+            saveProntoState(key, true); // Pronto 상태 저장
+        };
 
-            const totalAmount = data.totalAmount || ''; // 총 금액
+        // Cancel 버튼 생성
+        const cancelButton = document.createElement('button');
+        cancelButton.textContent = 'Cancel';
+        cancelButton.onclick = function() {
+            row.style.backgroundColor = ''; // Cancel 버튼 클릭 시 배경색을 초기화
+            saveProntoState(key, false); // Pronto 상태 저장
+        };
 
-            // 각 필드를 셀로 만들어 테이블에 추가
-            const numberCell = document.createElement('td');
-            const dateCell = document.createElement('td'); // Date 셀
-            const timestampCell = document.createElement('td'); // 시간만 표시되는 셀
-            const tableNumberCell = document.createElement('td');
-            const orderListCell = document.createElement('td');
-            const qtyCell = document.createElement('td'); // Qty 셀 추가
-            const totalAmountCell = document.createElement('td');
-            const actionCell = document.createElement('td'); // Action 셀
+        // Print 버튼 생성
+        const printButton = document.createElement('button');
+        printButton.textContent = 'Print';
+        printButton.onclick = function() {
+            printReceipt(data); // 영수증 인쇄 함수 호출
+        };
 
-            // Pront 버튼 생성
-            const prontButton = document.createElement('button');
-            prontButton.textContent = 'Pronto';
-            prontButton.onclick = function() {
-                row.style.backgroundColor = '#2F4F4F'; // Pront 버튼 클릭 시 행의 배경색을 어두운 회색으로 변경
-                saveProntoState(key, true); // Pronto 상태 저장
-            };
+        // Delete 버튼 생성
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.onclick = function () {
+            deleteRow(row, key); // deleteRow 함수 호출
+        };
 
-            // Cancel 버튼 생성
-            const cancelButton = document.createElement('button');
-            cancelButton.textContent = 'Cancel';
-            cancelButton.onclick = function() {
-                row.style.backgroundColor = ''; // Cancel 버튼 클릭 시 배경색을 초기화
-                saveProntoState(key, false); // Pronto 상태 저장
-            };
+        // Pront, Cancel, Print, Delete 버튼 추가
+        actionCell.appendChild(prontButton);
+        actionCell.appendChild(cancelButton);
+        actionCell.appendChild(printButton);
+        actionCell.appendChild(deleteButton);
 
-            // Print 버튼 생성
-            const printButton = document.createElement('button');
-            printButton.textContent = 'Print';
-            printButton.onclick = function() {
-                printReceipt(data); // 영수증 인쇄 함수 호출
-            };
-
-            // Pront, Cancel, Print 버튼 추가
-            actionCell.appendChild(prontButton);
-            actionCell.appendChild(cancelButton);
-            actionCell.appendChild(printButton);
-            
-            // Delete 버튼 생성
-            const deleteButton = document.createElement('button');
-            deleteButton.textContent = 'Delete';
-            deleteButton.onclick = function () {
-                deleteRow(row, key); // deleteRow 함수 호출
-            };
-
-            // Delete 버튼 추가
-            actionCell.appendChild(deleteButton);
-
-            function deleteRow(row, key) {
+        function deleteRow(row, key) {
             // Firebase에서 데이터 삭제
             const dbRef = database.ref(`orders/${key}`);
             dbRef.remove()
@@ -509,31 +530,32 @@
                 });
         }
 
-            numberCell.textContent = number; // 임의 번호 표시
-            dateCell.textContent = date; // 추출한 날짜 표시
-            timestampCell.textContent = time; // 추출한 시간만 표시
-            tableNumberCell.textContent = tableNumber; // 테이블 번호 표시
-            orderListCell.innerHTML = orderList; // 모든 내용을 줄바꿈으로 표시
-            qtyCell.innerHTML = qtyText; // 수량 표시 (줄 바꿈 포함)
-            totalAmountCell.textContent = totalAmount; // 총 금액 표시
+        numberCell.textContent = number; // 임의 번호 표시
+        dateCell.textContent = date; // 추출한 날짜 표시
+        timestampCell.textContent = time; // 추출한 시간만 표시
+        tableNumberCell.textContent = tableNumber; // 테이블 번호 표시
+        orderListCell.innerHTML = orderList; // 모든 내용을 줄바꿈으로 표시
+        qtyCell.innerHTML = qtyText; // 수량 표시 (줄 바꿈 포함)
+        totalAmountCell.textContent = totalAmount; // 총 금액 표시
 
-            row.appendChild(numberCell);
-            row.appendChild(dateCell);
-            row.appendChild(timestampCell);
-            row.appendChild(tableNumberCell);
-            row.appendChild(orderListCell);
-            row.appendChild(qtyCell); // Qty 셀 추가
-            row.appendChild(totalAmountCell);
-            row.appendChild(actionCell); // Action 셀 추가
+        row.appendChild(numberCell);
+        row.appendChild(dateCell);
+        row.appendChild(timestampCell);
+        row.appendChild(tableNumberCell);
+        row.appendChild(orderListCell);
+        row.appendChild(qtyCell); // Qty 셀 추가
+        row.appendChild(totalAmountCell);
+        row.appendChild(actionCell); // Action 셀 추가
 
-            // Pront 상태에 따라 배경색 적용
-            if (loadProntoState(key)) {
-                row.style.backgroundColor = 'green';
-            }
-
-            // 새 데이터는 항상 테이블의 첫 번째 행에 추가
-            tableBody.insertBefore(row, tableBody.firstChild);
+        // Pront 상태에 따라 배경색 적용
+        if (loadProntoState(key)) {
+            row.style.backgroundColor = 'green';
         }
+
+        // 선택된 테이블에 데이터 추가
+        targetTableBody.insertBefore(row, targetTableBody.firstChild);
+    }
+
 
         // 영수증 인쇄 함수
         function printReceipt(data) {

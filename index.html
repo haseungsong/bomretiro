@@ -1,4 +1,4 @@
-a<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="viewport" content="width=device-width, initial-scale=1.0">
@@ -419,12 +419,12 @@ a<!DOCTYPE html>
 
             const row = document.createElement('tr'); // 새로운 행 생성
 
+          
+
             // 각 데이터 필드를 별도로 가져오기
             const number = count++; // 데이터 번호는 1부터 시작하여 새로 추가될 때마다 증가
             const tableNumber = data.tableNumber || 'N/A'; // 테이블 번호가 없으면 'N/A'
             const timestamp = data.timestamp || 'N/A'; // 타임스탬프가 없으면 'N/A'
-
-            // 타임스탬프에서 날짜와 시간 부분 분리
             const dateObj = new Date(timestamp); // 타임스탬프를 Date 객체로 변환
             const date = dateObj.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }); // 브라질 시간대로 날짜 추출
             const time = dateObj.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false }); // 24시간 형식 시간 추출
@@ -458,6 +458,7 @@ a<!DOCTYPE html>
 
             const totalAmount = data.totalAmount || 'N/A'; // 총 금액이 없으면 'N/A'
 
+            
             // 키워드 배열 정의
             const blueKeywords = ['chicken', 'meia/meia', 'pork']; // 파란색으로 표시할 키워드
             const orangeKeywords = ['teokpoki', 'lapokki', 'batata']; // 주황색으로 표시할 키워드
@@ -508,6 +509,14 @@ a<!DOCTYPE html>
             const qtyCell = document.createElement('td'); // Qty 셀 추가
             const totalAmountCell = document.createElement('td');
             const actionCell = document.createElement('td'); // Action 셀
+
+
+            // 왼쪽 테이블인지 확인하여 특정 셀 숨기기
+            if (targetTableBody === document.querySelector('#dataTable tbody')) {
+                nameCell.style.display = 'none'; // 이름 셀 숨김
+                contactCell.style.display = 'none'; // 연락처 셀 숨김
+                addressCell.style.display = 'none'; // 주소 셀 숨김
+            }
 
            // Pront 버튼 생성
             const prontButton = document.createElement('button');
@@ -630,6 +639,7 @@ a<!DOCTYPE html>
             row.appendChild(contactCell); // 연락처 셀 추가
             row.appendChild(addressCell); // 주소 셀 추가
             row.appendChild(actionCell); // Action 셀 추가
+
 
             // Pront 상태에 따라 배경색 적용
             if (loadProntoState(key)) {

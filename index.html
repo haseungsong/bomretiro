@@ -543,6 +543,56 @@ a<!DOCTYPE html>
                 deleteRow(row, key); // Delete 버튼 클릭 시 행 삭제
             };
 
+
+            // 테이블 행 및 Firebase에서 데이터 삭제
+function deleteRow(row, key) {
+    // Firebase에서 데이터 삭제
+    const dbRef = database.ref('orders').child(key);
+    dbRef.remove()
+        .then(() => {
+            // UI에서 행 삭제
+            row.parentNode.removeChild(row);
+
+            // Local Storage에서도 데이터 삭제
+            allData = allData.filter(item => item.key !== key);
+            saveDataToLocalStorage();
+
+            // 매출 합계 재계산 및 업데이트
+            recalculateTotals();
+            alert('데이터가 성공적으로 삭제되었습니다.');
+        })
+        .catch((error) => {
+            console.error('데이터 삭제 중 오류 발생:', error);
+            alert('데이터 삭제 중 오류가 발생했습니다.');
+        });
+}
+
+        // 매출 합계를 재계산하고 UI 업데이트
+        function recalculateTotals() {
+            let dailyTotalAmount = 0;
+            let monthlyTotalAmount = 0;
+
+            const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+            const currentMonth = today.split('/')[1] + '/' + today.split('/')[2];
+
+            allData.forEach(item => {
+                const totalAmountText = item.data.totalAmount || '0';
+                const totalAmount = parseFloat(totalAmountText.replace(/[^0-9.-]+/g, '')) || 0;
+                const itemDate = new Date(item.data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+                const itemMonth = itemDate.split('/')[1] + '/' + itemDate.split('/')[2];
+
+                if (itemDate === today) {
+                    dailyTotalAmount += totalAmount;
+                }
+                if (itemMonth === currentMonth) {
+                    monthlyTotalAmount += totalAmount;
+                }
+            });
+
+            // UI 업데이트
+            document.getElementById('dailyTotal').textContent = `일 매출: ${dailyTotalAmount.toLocaleString('ko-KR')} 원`;
+            document.getElementById('monthlyTotal').textContent = `월 매출: ${monthlyTotalAmount.toLocaleString('ko-KR')} 원`;
+        }
             // Pront, Cancel, Print, Delete 버튼 추가
             actionCell.appendChild(prontButton);
             actionCell.appendChild(cancelButton);

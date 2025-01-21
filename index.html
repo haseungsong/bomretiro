@@ -545,27 +545,34 @@ a<!DOCTYPE html>
 
 
             // 테이블 행 및 Firebase에서 데이터 삭제
-function deleteRow(row, key) {
-    // Firebase에서 데이터 삭제
-    const dbRef = database.ref('orders').child(key);
-    dbRef.remove()
-        .then(() => {
-            // UI에서 행 삭제
-            row.parentNode.removeChild(row);
+        function deleteRow(row, key) {
+            // Firebase에서 데이터 삭제
+            const isPronto = loadProntoState(key); // Pronto 상태 확인
 
-            // Local Storage에서도 데이터 삭제
-            allData = allData.filter(item => item.key !== key);
-            saveDataToLocalStorage();
+        if (isPronto) {
+            // Pronto 상태라면 비밀번호 입력 요구
+            const password = prompt('Pronto 상태입니다. 삭제하려면 비밀번호를 입력하세요:');
+            if (password !== '1127') { // 올바른 비밀번호 확인
+                alert('비밀번호가 올바르지 않습니다. 삭제가 취소되었습니다.');
+                return; // 비밀번호가 틀리면 삭제 중단
+            }
+        }
 
-            // 매출 합계 재계산 및 업데이트
-            recalculateTotals();
-            alert('데이터가 성공적으로 삭제되었습니다.');
-        })
-        .catch((error) => {
-            console.error('데이터 삭제 중 오류 발생:', error);
-            alert('데이터 삭제 중 오류가 발생했습니다.');
-        });
-}
+        // Firebase에서 데이터 삭제
+        const dbRef = database.ref('orders').child(key);
+        dbRef.remove()
+            .then(() => {
+                row.parentNode.removeChild(row); // 행 삭제
+                allData = allData.filter(item => item.key !== key); // 로컬 데이터에서도 삭제
+                saveDataToLocalStorage();
+                recalculateTotals();
+                alert('데이터가 성공적으로 삭제되었습니다.');
+            })
+            .catch((error) => {
+                console.error('데이터 삭제 중 오류 발생:', error);
+                alert('데이터 삭제 중 오류가 발생했습니다.');
+            });
+        }
 
         // 매출 합계를 재계산하고 UI 업데이트
         function recalculateTotals() {

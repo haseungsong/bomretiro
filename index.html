@@ -653,61 +653,65 @@
 
         // 영수증 인쇄 함수
         function printReceipt(data) {
-            // 출력할 내용을 HTML 형식으로 구성
-            const receiptContent = `
-                <div style="font-size: 12px; line-height: 1.5;">
-                    <p><strong>Table Number:</strong> ${data.tableNumber || ''}</p>
-                    <p><strong>Date:</strong> ${new Date(data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</p>
-                    <p><strong>Time:</strong> ${new Date(data.timestamp).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</p>
-                    <p><strong>Order List:</strong></p>
-                    <p>${JSON.stringify(data.orderList || {})
-                        .replace(/[\[\]{}"]/g, '')
-                        .split(',')
-                        .join('<br>')}</p>
-                    <p><strong>Total Amount:</strong> ${data.totalAmount || ''}</p>
-                </div>
-            `;
+    // 출력할 내용을 HTML 형식으로 구성
+    const receiptContent = `
+        <div style="font-size: 12px; line-height: 1.5; padding: 10px;">
+            <h3 style="text-align: center;">Seoul Chicken Receipt</h3>
+            <p><strong>Table Number:</strong> ${data.tableNumber || ''}</p>
+            <p><strong>Date:</strong> ${new Date(data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</p>
+            <p><strong>Time:</strong> ${new Date(data.timestamp).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</p>
+            <p><strong>Order List:</strong></p>
+            <p>${JSON.stringify(data.orderList || {})
+                .replace(/[\[\]{}"]/g, '')
+                .split(',')
+                .join('<br>')}</p>
+            <p><strong>Total Amount:</strong> ${data.totalAmount || ''}</p>
+        </div>
+    `;
 
-            // 새 창에서 출력 준비
-            const printWindow = window.open('', '', 'height=500,width=400');
-            printWindow.document.write(`
-                <html>
-                <head>
-                    <title>Receipt</title>
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            margin: 0;
-                            padding: 0;
-                        }
-                        div {
-                            width: 80mm; /* 영수증 폭 */
-                            font-size: 12px;
-                            line-height: 1.5;
-                        }
-                        @media print {
-                            body {
-                                margin: 0;
-                                padding: 0;
-                            }
-                            div {
-                                page-break-after: avoid; /* 페이지 나누기 방지 */
-                                margin: 0;
-                                padding: 0;
-                            }
-                        }
-                    </style>
-                </head>
-                <body>
-                    ${receiptContent}
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
-            printWindow.close();
-        }
+    // 새 창에서 출력 준비
+    const printWindow = window.open('', '', 'height=500,width=400');
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Receipt</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 0;
+                    padding: 0;
+                }
+                div {
+                    width: 80mm; /* 영수증 폭 */
+                    font-size: 12px;
+                    line-height: 1.5;
+                }
+                @media print {
+                    body {
+                        margin: 0;
+                        padding: 0;
+                    }
+                    div {
+                        page-break-after: avoid; /* 페이지 나누기 방지 */
+                        margin: 0 auto; /* 가운데 정렬 */
+                        padding: 10px;
+                        width: 100%; /* 인쇄 가능한 영역 사용 */
+                        box-sizing: border-box;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            ${receiptContent}
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+}
+
     
 
        // Firebase에서 기존 데이터 불러오기 (시간 역순으로 표시)

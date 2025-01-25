@@ -651,16 +651,19 @@
         }
 
 
-        // 영수증 인쇄 함수
-        function printReceipt(data) {
-    // 출력할 내용을 HTML 형식으로 구성
-
-    let orderListFormatted = JSON.stringify(data.orderList || {})
-        .replace(/"name":/g, '') // "name:" 제거
-        .replace(/[\[\]{}"]/g, '') // 불필요한 문자 제거
-        .split(',') // 콤마로 나눔
+       // 영수증 인쇄 함수
+function printReceipt(data) {
+    // orderList에서 "name:"과 불필요한 문자 제거
+    let orderListFormatted = (data.orderList || [])
+        .map(item => {
+            if (typeof item === "object") {
+                return `${item.quantity}x ${item.name}`; // 예: "2x Chicken"
+            }
+            return item; // 이미 문자열 형태라면 그대로 반환
+        })
         .join('<br>'); // 줄바꿈 추가
 
+    // 출력할 내용을 HTML 형식으로 구성
     const receiptContent = `
         <div style="font-size: 12px; line-height: 1.5; padding: 3px;">
             <h3 style="text-align: center;">Seoul Chicken Receipt</h3>
@@ -668,10 +671,7 @@
             <p><strong>Date:</strong> ${new Date(data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</p>
             <p><strong>Time:</strong> ${new Date(data.timestamp).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</p>
             <p><strong>Order List:</strong></p>
-            <p>${JSON.stringify(data.orderList || {})
-                .replace(/[\[\]{}"]/g, '')
-                .split(',')
-                .join('<br>')}</p>
+            <p>${orderListFormatted}</p>
             <p style="margin: 0 0 12px 0;"><strong>Total Amount:</strong> ${data.totalAmount || ''}</p>
         </div>
     `;
@@ -704,7 +704,7 @@
                         padding: 10px;
                         width: 100%; /* 인쇄 가능한 영역 사용 */
                         box-sizing: border-box;
-                        margin: 0 0 20px 0; /* 아래쪽에 20px 여백 추가 */
+                        margin: 0 0 10px 0; /* 아래쪽에 10px 여백 추가 */
                     }
                 }
             </style>
@@ -714,7 +714,6 @@
         </body>
         </html>
     `);
-
     printWindow.document.close();
     printWindow.focus();
     printWindow.print();

@@ -99,6 +99,7 @@
     <h1>Quadro de Status de Pedidos da Seoul Chicken</h1>
     <div id="numberButtons" style="margin-bottom: 10px; text-align: left;">
         <!-- 1번부터 10번까지 버튼 생성 -->
+    <button style="margin: 0 5px;" onclick="showOrderDetails(0)">0</button>
     <button style="margin: 0 5px;" onclick="showOrderDetails(1)">1</button>
     <button style="margin: 0 5px;" onclick="showOrderDetails(2)">2</button>
     <button style="margin: 0 5px;" onclick="showOrderDetails(3)">3</button>
@@ -141,13 +142,13 @@
         const dbRef = firebase.database().ref('orders');
         dbRef.once('value', (snapshot) => {
             const data = snapshot.val();
-            const tableOrders = Object.values(data).filter(order => {
-                const orderTableNumber = Number(order.tableNumber);
+            const tableOrders = Object.values(data || {}).filter(order => {
+                const orderTableNumber = Number(order.tableNumber); // 데이터의 tableNumber
                 const orderDate = new Date(order.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
-                // 테이블 번호와 날짜 필터 조건 모두 일치하는지 확인
-                return orderTableNumber === tableNumber &&
-                    (selectedDate === 'all' || selectedDate === orderDate);
+                // 테이블 번호와 날짜 필터 조건 확인
+                return orderTableNumber === tableNumber && // tableNumber 매칭
+                    (selectedDate === 'all' || selectedDate === orderDate); // 날짜 필터 매칭
             });
 
             if (tableOrders.length > 0) {
@@ -241,21 +242,39 @@ printWindow.print(); // 인쇄 실행
     
         // 결제 정보 저장
         function submitPayment() {
-            const paymentMethod = document.getElementById('paymentMethod').value;
-            const modalTitle = document.getElementById('modalTitle').textContent;
-            const tableNumber = parseInt(modalTitle.replace('Table ', '').replace(' Details', ''), 10);
-    
-            // Firebase에 결제 정보 업데이트
-            const dbRef = firebase.database().ref('payments').push();
-            dbRef.set({
-                tableNumber: tableNumber,
-                paymentMethod: paymentMethod,
-                timestamp: new Date().toISOString()
-            }).then(() => {
-                alert('결제가 성공적으로 완료되었습니다.');
-                closeModal();
-            }).catch((error) => {
-                console.error('결제 저장 중 오류:', error);
+            const paymentMethod = document.getElementById('paymentMethod').value; // 선택한 결제 방식 가져오기
+            const modalTitle = document.getElementById('modalTitle').textContent; // 모달 제목 가져오기
+            const tableNumber = parseInt(modalTitle.replace('Table ', '').replace(' Details', ''), 10); // 테이블 번호 추출
+
+            // Firebase에서 데이터 가져오기
+            const dbRef = firebase.database().ref('orders');
+            dbRef.once('value', (snapshot) => {
+                const data = snapshot.val();
+                const targetKey = Object.keys(data || {}).find(key => Number(data[key].tableNumber) === tableNumber);
+
+                if (targetKey) {
+                    // 기존 데이터에서 Payment 값만 업데이트
+                    dbRef.child(targetKey).update({ paymentMethod }).then(() => {
+                        alert('결제가 성공적으로 완료되었습니다.');
+
+                        // 해당 행의 Payment 셀 업데이트
+                        const rows = document.querySelectorAll('#dataTable tbody tr, #deliveryTable tbody tr');
+                        rows.forEach(row => {
+                            const rowTableNumber = parseInt(row.children[3]?.textContent || '0', 10); // 테이블 번호
+                            if (rowTableNumber === tableNumber) {
+                                const paymentCell = row.children[7]; // Payment 셀
+                                paymentCell.textContent = paymentMethod; // 결제 방식 업데이트
+                                paymentCell.style.backgroundColor = '#d0e7ff'; // 배경색 변경
+                            }
+                        });
+
+                        closeModal(); // 모달 닫기
+                    }).catch((error) => {
+                        console.error('결제 저장 중 오류:', error); // 오류 처리
+                    });
+                } else {
+                    alert('해당 테이블 번호에 대한 데이터를 찾을 수 없습니다.');
+                }
             });
         }
     </script>
@@ -337,6 +356,7 @@ printWindow.print(); // 인쇄 실행
                 <th>Pedidos</th>
                 <th>Qty</th>
                 <th>Valor</th>
+                <th>Payment</th> <!-- 추가된 필드 -->
                 <th>Action</th>
             </tr>
         </thead>
@@ -675,6 +695,16 @@ printWindow.print(); // 인쇄 실행
             const addressCell = document.createElement('td'); // 주소 셀
             const qtyCell = document.createElement('td'); // Qty 셀 추가
             const totalAmountCell = document.createElement('td');
+            const paymentCell = document.createElement('td'); // Payment 셀
+            const paymentMethod = data.paymentMethod || 'N/A'; // 결제 방식이 없으면 'N/A'
+            paymentCell.textContent = paymentMethod; // Payment 값을 셀에 추가
+
+            // Payment 셀에 값이 있을 경우 배경색 변경
+            if (paymentMethod && paymentMethod !== 'N/A') {
+                row.style.backgroundColor = '#d0e7ff'; // 연한 파란색 배경을 행 전체에 적용
+            }
+            // 행에 데이터 키 추가 (모달과 연동 위해)
+                row.setAttribute('data-key', key);
             const actionCell = document.createElement('td'); // Action 셀
 
 
@@ -802,6 +832,7 @@ printWindow.print(); // 인쇄 실행
             row.appendChild(orderListCell);
             row.appendChild(qtyCell); // 수량 셀 추가
             row.appendChild(totalAmountCell);
+            row.appendChild(paymentCell); // Payment 셀 추가
             row.appendChild(nameCell); // 이름 셀 추가
             row.appendChild(contactCell); // 연락처 셀 추가
             row.appendChild(addressCell); // 주소 셀 추가

@@ -131,31 +131,39 @@
     <script>
         // 테이블별 주문 내역을 가져오는 함수
         function showOrderDetails(tableNumber) {
-            const modal = document.getElementById('orderModal');
-            const modalContent = document.getElementById('modalContent');
-            const modalTitle = document.getElementById('modalTitle');
-    
-            modalTitle.textContent = `Table ${tableNumber} Details`;
-    
-            // Firebase에서 해당 테이블 데이터를 가져오기
-            const dbRef = firebase.database().ref('orders');
-            dbRef.once('value', (snapshot) => {
-                const data = snapshot.val();
-                const tableOrders = Object.values(data).filter(order => order.tableNumber === tableNumber);
-    
-                if (tableOrders.length > 0) {
-                    modalContent.innerHTML = tableOrders.map(order => `
-                        <p><strong>Order:</strong> ${JSON.stringify(order.orderList)}</p>
-                        <p><strong>Total:</strong> ${order.totalAmount} 원</p>
-                        <hr>
-                    `).join('');
-                } else {
-                    modalContent.innerHTML = '<p>No orders found for this table.</p>';
-                }
-    
-                modal.style.display = 'block'; // 모달 열기
+        const modal = document.getElementById('orderModal');
+        const modalContent = document.getElementById('modalContent');
+        const modalTitle = document.getElementById('modalTitle');
+        const selectedDate = document.getElementById('dateFilter').value; // 선택된 날짜 필터 값 가져오기
+
+        modalTitle.textContent = `Table ${tableNumber} Details`;
+
+        // Firebase에서 해당 테이블 데이터를 가져오기
+        const dbRef = firebase.database().ref('orders');
+        dbRef.once('value', (snapshot) => {
+            const data = snapshot.val();
+            const tableOrders = Object.values(data).filter(order => {
+                const orderTableNumber = Number(order.tableNumber);
+                const orderDate = new Date(order.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+
+                // 테이블 번호와 날짜 필터 조건 모두 일치하는지 확인
+                return orderTableNumber === tableNumber &&
+                    (selectedDate === 'all' || selectedDate === orderDate);
             });
-        }
+
+            if (tableOrders.length > 0) {
+                modalContent.innerHTML = tableOrders.map(order => `
+                    <p><strong>Order:</strong> ${JSON.stringify(order.orderList)}</p>
+                    <p><strong>Total:</strong> ${order.totalAmount} 원</p>
+                    <hr>
+                `).join('');
+            } else {
+                modalContent.innerHTML = '<p>No orders found for this table.</p>';
+            }
+
+            modal.style.display = 'block'; // 모달 열기
+        });
+    }
     
         // 모달 닫기
         function closeModal() {
@@ -320,6 +328,7 @@
 
         const dateFilter = document.getElementById('dateFilter'); // 날짜 필터 드롭다운
         const tableBody = document.querySelector('#dataTable tbody'); // 테이블 바디
+        const deliveryTableBody = document.querySelector('#deliveryTable tbody'); // 오른쪽 테이블 바디
         const notificationSound = document.getElementById('notificationSound'); // 알림 소리
         const enableSoundButton = document.getElementById('enableSoundButton'); // 소리 활성화 버튼
 
@@ -865,15 +874,28 @@ function loadDataFromFirebase() {
 
         // 날짜 필터 드롭다운을 채우는 함수
         function populateDateFilter() {
-            const uniqueDates = [...new Set(allData.map(item => new Date(item.data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })))];
+        // 기존 필터 옵션 초기화
+        dateFilter.innerHTML = ''; 
 
-            uniqueDates.forEach(date => {
-                const option = document.createElement('option');
-                option.value = date;
-                option.textContent = date;
-                dateFilter.appendChild(option);
-            });
-        }
+        // "All Dates" 기본 옵션 추가
+        const allOption = document.createElement('option');
+        allOption.value = 'all';
+        allOption.textContent = 'All Dates';
+        dateFilter.appendChild(allOption);
+
+        // 중복 없는 날짜 리스트 생성
+        const uniqueDates = [...new Set(allData.map(item =>
+            new Date(item.data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        ))];
+
+        // 날짜 옵션 추가
+        uniqueDates.forEach(date => {
+            const option = document.createElement('option');
+            option.value = date;
+            option.textContent = date;
+            dateFilter.appendChild(option);
+        });
+    }
 
         // 날짜 필터가 변경되었을 때 호출되는 함수
         dateFilter.addEventListener('change', function() {
@@ -884,6 +906,7 @@ function loadDataFromFirebase() {
         // 선택한 날짜에 따라 데이터를 필터링하여 표시하는 함수
         function filterDataByDate(date) {
     tableBody.innerHTML = ''; // 기존 테이블 데이터 지우기
+    deliveryTableBody.innerHTML = ''; // 오른쪽 테이블 초기화
     count = 1; // 카운터 초기화
 
     let dailyTotalAmount = 0; // 일 매출 초기화

@@ -760,7 +760,7 @@
             contactCell.textContent = contact; // 연락처 표시
             addressCell.textContent = address; // 주소 표시
             qtyCell.innerHTML = qtyText; // 수량 표시
-            totalAmountCell.textContent = totalAmount; // 총 금액 표시
+            totalAmountCell.textContent = totalAmount.replace('Total: ', ''); // 'Total: ' 문자열 제거 후 셀에 설정
 
             // 행에 셀 추가
             row.appendChild(numberCell);

@@ -722,6 +722,7 @@ printWindow.print(); // 인쇄 실행
             prontButton.onclick = function() {
                 row.style.backgroundColor = '#2F4F4F'; // Pront 클릭 시 배경색 변경
                 saveProntoState(key, true); // Pronto 상태 저장
+                database.ref(`orders/${key}`).update({ pronto: true }); // 🔥 Firebase에 저장 (한 줄 추가)
             };
 
             // Cancel 버튼 생성
@@ -731,6 +732,7 @@ printWindow.print(); // 인쇄 실행
             cancelButton.onclick = function() {
                 row.style.backgroundColor = ''; // Cancel 클릭 시 배경색 초기화
                 saveProntoState(key, false); // Pronto 상태 초기화
+                database.ref(`orders/${key}`).update({ pronto: false }); // 🔥 Firebase에 저장 (한 줄 추가)
             };
 
             // Print 버튼 생성
@@ -1075,50 +1077,65 @@ function loadDataFromFirebase() {
 
         // 실시간으로 새 데이터가 추가될 때 테이블에 추가 및 알림 소리 재생
         function setupRealtimeUpdates() {
-    const dbRef = database.ref('orders');
+        const dbRef = database.ref('orders');
 
-    dbRef.on('child_added', (snapshot) => {
-        const newData = { key: snapshot.key, data: snapshot.val() };
+        dbRef.on('child_added', (snapshot) => {
+            const newData = { key: snapshot.key, data: snapshot.val() };
 
-        // 중복 데이터 추가 방지
-        if (!allData.some(item => item.key === newData.key)) {
-            allData.push(newData); // 새 데이터를 저장
+            // 중복 데이터 추가 방지
+            if (!allData.some(item => item.key === newData.key)) {
+                allData.push(newData); // 새 데이터를 저장
 
-            // 필터된 데이터만 테이블에 표시하도록 수정된 부분
-            if (dateFilter.value === 'all') {
-                displayData(newData.key, newData.data); // 모든 데이터를 테이블에 추가
-            } else {
-                const selectedDate = dateFilter.value; // 현재 선택된 날짜
-                const itemDate = new Date(newData.data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+                // 필터된 데이터만 테이블에 표시하도록 수정된 부분
+                if (dateFilter.value === 'all') {
+                    displayData(newData.key, newData.data); // 모든 데이터를 테이블에 추가
+                } else {
+                    const selectedDate = dateFilter.value; // 현재 선택된 날짜
+                    const itemDate = new Date(newData.data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
-                if (selectedDate === itemDate) {
-                    displayData(newData.key, newData.data); // 선택된 날짜의 데이터만 추가
+                    if (selectedDate === itemDate) {
+                        displayData(newData.key, newData.data); // 선택된 날짜의 데이터만 추가
+                    }
                 }
+
+                saveDataToLocalStorage(); // 새 데이터를 Local Storage에 저장
+                updateSales(newData.data); // 실시간 매출 업데이트
             }
 
-            saveDataToLocalStorage(); // 새 데이터를 Local Storage에 저장
-            updateSales(newData.data); // 실시간 매출 업데이트
-        }
+            // 날짜 필터 업데이트
+            const newDate = new Date(newData.data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }); // 브라질 시간대와 포맷으로 변경
+            if (!Array.from(dateFilter.options).some(option => option.value === newDate)) {
+                const option = document.createElement('option');
+                option.value = newDate;
+                option.textContent = newDate;
+                dateFilter.appendChild(option);
+            }
 
-        // 날짜 필터 업데이트
-        const newDate = new Date(newData.data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }); // 브라질 시간대와 포맷으로 변경
-        if (!Array.from(dateFilter.options).some(option => option.value === newDate)) {
-            const option = document.createElement('option');
-            option.value = newDate;
-            option.textContent = newDate;
-            dateFilter.appendChild(option);
-        }
+            // 필터 상태가 변경되었을 때 새 데이터 처리
+            if (dateFilter.value !== 'all' && dateFilter.value !== newDate) {
+                // 필터에 따라 데이터가 추가되지 않을 수 있으므로 알림만 표시
+                showNotification();
+            } else {
+                showNotification(); // 새 데이터가 추가될 때 알림 표시
+            }
+        });
 
-        // 필터 상태가 변경되었을 때 새 데이터 처리
-        if (dateFilter.value !== 'all' && dateFilter.value !== newDate) {
-            // 필터에 따라 데이터가 추가되지 않을 수 있으므로 알림만 표시
-            showNotification();
-        } else {
-            showNotification(); // 새 데이터가 추가될 때 알림 표시
-        }
-    });
 
-}
+
+    // ✅ 🚀 **Firebase에서 Pronto 상태 변경 감지 (여기에 추가!)**
+    dbRef.on('child_changed', snapshot => {
+            const updatedKey = snapshot.key;
+            const updatedData = snapshot.val();
+
+            document.querySelectorAll('#dataTable tbody tr, #deliveryTable tbody tr').forEach(row => {
+                if (row.getAttribute('data-key') === updatedKey) {
+                    row.style.backgroundColor = updatedData.pronto ? '#2F4F4F' : ''; // 상태 변경 시 배경색 업데이트
+                }
+            });
+        });
+    }
+
+
 
         // **새로운 함수 추가: 매출 업데이트 처리**
         function updateSales(newData) {

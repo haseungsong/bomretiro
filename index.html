@@ -240,43 +240,63 @@ printWindow.document.close(); // 문서 닫기
 printWindow.print(); // 인쇄 실행
 }
     
-        // 결제 정보 저장
-        function submitPayment() {
-            const paymentMethod = document.getElementById('paymentMethod').value; // 선택한 결제 방식 가져오기
-            const modalTitle = document.getElementById('modalTitle').textContent; // 모달 제목 가져오기
-            const tableNumber = parseInt(modalTitle.replace('Table ', '').replace(' Details', ''), 10); // 테이블 번호 추출
+function submitPayment() {
+    const paymentMethod = document.getElementById('paymentMethod').value;
+    const modalTitle = document.getElementById('modalTitle').textContent;
+    const tableNumber = parseInt(modalTitle.replace('Table ', '').replace(' Details', ''), 10);
 
-            // Firebase에서 데이터 가져오기
-            const dbRef = firebase.database().ref('orders');
-            dbRef.once('value', (snapshot) => {
-                const data = snapshot.val();
-                const targetKey = Object.keys(data || {}).find(key => Number(data[key].tableNumber) === tableNumber);
+    console.log("🔥 결제 요청 시작...");
+    console.log("✅ Table Number:", tableNumber);
+    console.log("✅ Payment Method:", paymentMethod);
 
-                if (targetKey) {
-                    // 기존 데이터에서 Payment 값만 업데이트
-                    dbRef.child(targetKey).update({ paymentMethod }).then(() => {
-                        alert('결제가 성공적으로 완료되었습니다.');
+    const dbRef = firebase.database().ref('orders');
+    dbRef.once('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        const targetKey = Object.keys(data).find(key => Number(data[key].tableNumber) === tableNumber);
 
-                        // 해당 행의 Payment 셀 업데이트
-                        const rows = document.querySelectorAll('#dataTable tbody tr, #deliveryTable tbody tr');
-                        rows.forEach(row => {
-                            const rowTableNumber = parseInt(row.children[3]?.textContent || '0', 10); // 테이블 번호
-                            if (rowTableNumber === tableNumber) {
-                                const paymentCell = row.children[7]; // Payment 셀
-                                paymentCell.textContent = paymentMethod; // 결제 방식 업데이트
-                                paymentCell.style.backgroundColor = '#d0e7ff'; // 배경색 변경
-                            }
-                        });
-
-                        closeModal(); // 모달 닫기
-                    }).catch((error) => {
-                        console.error('결제 저장 중 오류:', error); // 오류 처리
-                    });
-                } else {
-                    alert('해당 테이블 번호에 대한 데이터를 찾을 수 없습니다.');
-                }
-            });
+        if (!targetKey) {
+            alert(`해당 테이블(${tableNumber})의 주문 데이터를 찾을 수 없습니다.`);
+            return;
         }
+
+        // 🔹 기존 주문 데이터에 결제 방식 추가
+        const orderRef = firebase.database().ref(`orders/${targetKey}`);
+        orderRef.update({ paymentMethod }).then(() => {
+            console.log("✅ 주문 정보에 결제 방식 업데이트 완료!");
+            
+            // 🔹 `payments` 경로에도 데이터 저장
+            const paymentsRef = firebase.database().ref('payments').push();
+            const newPayment = {
+                tableNumber,
+                paymentMethod,
+                timestamp: new Date().toISOString()
+            };
+
+            return paymentsRef.set(newPayment);
+        }).then(() => {
+            console.log("✅ 결제 정보 저장 완료!");
+            alert('✅ 결제가 성공적으로 저장되었습니다!');
+
+            // 🔄 UI 자동 업데이트 실행
+            updateTableUI(tableNumber, paymentMethod);
+            closeModal();
+        }).catch((error) => {
+            console.error("❌ 결제 저장 실패:", error);
+        });
+    });
+}
+
+// 🔄 **Firebase 실시간 업데이트 리스너 추가 (새 결제 감지)**
+const paymentsRef = firebase.database().ref('payments');
+
+paymentsRef.on('child_added', (snapshot) => {
+    const newPayment = snapshot.val();
+    console.log("🔄 새로운 결제 감지:", newPayment);
+
+    // 🔹 `updateTableUI()`를 호출하여 테이블 UI 업데이트
+    updateTableUI(newPayment.tableNumber, newPayment.paymentMethod);
+});
+
     </script>
 
 
@@ -701,13 +721,24 @@ const time = new Date(data.timestamp).toLocaleTimeString('pt-BR', { timeZone: 'A
             const qtyCell = document.createElement('td'); // Qty 셀 추가
             const totalAmountCell = document.createElement('td');
             const paymentCell = document.createElement('td'); // Payment 셀
-            const paymentMethod = data.paymentMethod || 'N/A'; // 결제 방식이 없으면 'N/A'
-            paymentCell.textContent = paymentMethod; // Payment 값을 셀에 추가
+paymentCell.textContent = 'N/A'; // 기본값 설정
 
-            // Payment 셀에 값이 있을 경우 배경색 변경
-            if (paymentMethod && paymentMethod !== 'N/A') {
-                row.style.backgroundColor = '#d0e7ff'; // 연한 파란색 배경을 행 전체에 적용
-            }
+// 🔹 Firebase에서 `payments` 테이블 조회하여 Payment 값 가져오기
+const paymentsRef = firebase.database().ref('payments');
+paymentsRef.once('value', (snapshot) => {
+    const paymentsData = snapshot.val();
+    if (paymentsData) {
+        // 🔎 해당 테이블 번호와 일치하는 결제 방식 찾기
+        const foundPayment = Object.values(paymentsData).find(payment => payment.tableNumber == data.tableNumber);
+        if (foundPayment) {
+            paymentCell.textContent = foundPayment.paymentMethod;
+            row.style.backgroundColor = '#d0e7ff'; // 배경색 변경
+        }
+    }
+});
+
+// 테이블에 Payment 셀 추가
+row.appendChild(paymentCell);
             // 행에 데이터 키 추가 (모달과 연동 위해)
                 row.setAttribute('data-key', key);
             const actionCell = document.createElement('td'); // Action 셀
@@ -1122,7 +1153,6 @@ function loadDataFromFirebase() {
             showNotification(); // 새 데이터가 추가될 때 알림 표시
         }
     });
-
 }
 
         // **새로운 함수 추가: 매출 업데이트 처리**

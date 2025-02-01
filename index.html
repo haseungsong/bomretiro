@@ -242,41 +242,45 @@ printWindow.print(); // 인쇄 실행
     
         // 결제 정보 저장
         function submitPayment() {
-            const paymentMethod = document.getElementById('paymentMethod').value; // 선택한 결제 방식 가져오기
-            const modalTitle = document.getElementById('modalTitle').textContent; // 모달 제목 가져오기
-            const tableNumber = parseInt(modalTitle.replace('Table ', '').replace(' Details', ''), 10); // 테이블 번호 추출
+    const paymentMethod = document.getElementById('paymentMethod').value;
+    const modalTitle = document.getElementById('modalTitle').textContent;
+    const tableNumber = parseInt(modalTitle.replace('Table ', '').replace(' Details', ''), 10);
 
-            // Firebase에서 데이터 가져오기
-            const dbRef = firebase.database().ref('orders');
-            dbRef.once('value', (snapshot) => {
-                const data = snapshot.val();
-                const targetKey = Object.keys(data || {}).find(key => Number(data[key].tableNumber) === tableNumber);
+    // 비밀번호 모달 닫기 전용 함수 호출
+    const passwordModal = document.getElementById('passwordModal');
+    if (passwordModal) {
+        alert('비밀번호 입력 모달이 열려있습니다. 결제를 진행하려면 모달을 닫아주세요.');
+        return;
+    }
 
-                if (targetKey) {
-                    // 기존 데이터에서 Payment 값만 업데이트
-                    dbRef.child(targetKey).update({ paymentMethod }).then(() => {
-                        alert('결제가 성공적으로 완료되었습니다.');
+    const dbRef = firebase.database().ref('orders');
+    dbRef.once('value', (snapshot) => {
+        const data = snapshot.val();
+        const targetKey = Object.keys(data || {}).find(key => Number(data[key].tableNumber) === tableNumber);
 
-                        // 해당 행의 Payment 셀 업데이트
-                        const rows = document.querySelectorAll('#dataTable tbody tr, #deliveryTable tbody tr');
-                        rows.forEach(row => {
-                            const rowTableNumber = parseInt(row.children[3]?.textContent || '0', 10); // 테이블 번호
-                            if (rowTableNumber === tableNumber) {
-                                const paymentCell = row.children[7]; // Payment 셀
-                                paymentCell.textContent = paymentMethod; // 결제 방식 업데이트
-                                paymentCell.style.backgroundColor = '#d0e7ff'; // 배경색 변경
-                            }
-                        });
+        if (targetKey) {
+            dbRef.child(targetKey).update({ paymentMethod }).then(() => {
+                alert('결제가 성공적으로 완료되었습니다.');
+                // 해당 행의 Payment 셀 업데이트
+                const rows = document.querySelectorAll('#dataTable tbody tr, #deliveryTable tbody tr');
+                rows.forEach(row => {
+                    const rowTableNumber = parseInt(row.children[3]?.textContent || '0', 10);
+                    if (rowTableNumber === tableNumber) {
+                        const paymentCell = row.children[7]; // Payment 셀
+                        paymentCell.textContent = paymentMethod;
+                        paymentCell.style.backgroundColor = '#d0e7ff';
+                    }
+                });
 
-                        closeModal(); // 모달 닫기
-                    }).catch((error) => {
-                        console.error('결제 저장 중 오류:', error); // 오류 처리
-                    });
-                } else {
-                    alert('해당 테이블 번호에 대한 데이터를 찾을 수 없습니다.');
-                }
+                closeModal();
+            }).catch((error) => {
+                console.error('결제 저장 중 오류:', error);
             });
+        } else {
+            alert('해당 테이블 번호에 대한 데이터를 찾을 수 없습니다.');
         }
+    });
+}
     </script>
 
 
@@ -418,92 +422,92 @@ printWindow.print(); // 인쇄 실행
 
 
         window.onload = function() {
-        const passwords = ["Ji1213k", "4321"]; // 허용할 비밀번호 목록
+    const passwords = ["Ji1213k", "4321"]; // 허용할 비밀번호 목록
 
-        // 비밀번호 입력 모달 생성
-        const passwordModal = document.createElement("div");
-        passwordModal.id = "passwordModal";
-        passwordModal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5); /* 반투명 검정 배경 */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        `;
+    // 비밀번호 입력 모달 생성
+    const passwordModal = document.createElement("div");
+    passwordModal.id = "passwordModal";
+    passwordModal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5); /* 반투명 검정 배경 */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    `;
 
-        // 모달 내용 구성
-        passwordModal.innerHTML = `
-            <div style="
-                background: #ffffff; 
-                padding: 30px 20px; 
-                border-radius: 12px; 
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); 
-                text-align: center; 
-                max-width: 350px; 
-                width: 90%;
-            ">
-                <h2 style="
-                    margin-bottom: 20px; 
-                    font-size: 1.5em; 
-                    color: #333;
-                ">비밀번호 입력</h2>
-                <input type="password" id="passwordInput" placeholder="비밀번호를 입력하세요" style="
-                    width: 100%; 
-                    padding: 10px; 
-                    font-size: 1em; 
-                    margin-bottom: 15px; 
-                    border: 1px solid #ddd; 
-                    border-radius: 8px; 
-                    box-sizing: border-box;
-                " />
-                <button id="submitPassword" style="
-                    width: 100%; 
-                    padding: 10px; 
-                    font-size: 1em; 
-                    background: #007BFF; 
-                    color: white; 
-                    border: none; 
-                    border-radius: 8px; 
-                    cursor: pointer; 
-                    transition: background 0.3s ease;
-                ">확인</button>
-            </div>
-        `;
+    // 모달 내용 구성
+    passwordModal.innerHTML = `
+        <div style="
+            background: #ffffff; 
+            padding: 30px 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); 
+            text-align: center; 
+            max-width: 350px; 
+            width: 90%;
+        ">
+            <h2 style="
+                margin-bottom: 20px; 
+                font-size: 1.5em; 
+                color: #333;
+            ">비밀번호 입력</h2>
+            <input type="password" id="passwordInput" placeholder="비밀번호를 입력하세요" style="
+                width: 100%; 
+                padding: 10px; 
+                font-size: 1em; 
+                margin-bottom: 15px; 
+                border: 1px solid #ddd; 
+                border-radius: 8px; 
+                box-sizing: border-box;
+            " />
+            <button id="submitPassword" style="
+                width: 100%; 
+                padding: 10px; 
+                font-size: 1em; 
+                background: #007BFF; 
+                color: white; 
+                border: none; 
+                border-radius: 8px; 
+                cursor: pointer; 
+                transition: background 0.3s ease;
+            ">확인</button>
+        </div>
+    `;
 
-        document.body.appendChild(passwordModal);
+    document.body.appendChild(passwordModal);
 
-        // 기존 버튼 클릭 이벤트를 수정하여 검증 로직을 함수로 분리
-        document.getElementById("submitPassword").addEventListener("click", () => {
+    // 비밀번호 입력 이벤트
+    document.getElementById("submitPassword").addEventListener("click", verifyPassword);
+
+    // Enter 키 입력 이벤트 추가
+    document.getElementById("passwordInput").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") { // Enter 키 입력 확인
             verifyPassword(); // 비밀번호 검증 로직 호출
-        });
+        }
+    });
 
-        // 새로운 코드: Enter 키 입력 이벤트 추가
-        document.getElementById("passwordInput").addEventListener("keydown", (event) => {
-            if (event.key === "Enter") { // Enter 키 입력 확인
-                verifyPassword(); // 비밀번호 검증 로직 호출
-            }
-        });
+    // ✅ 비밀번호 확인 후 데이터 로드
+    function verifyPassword() {
+        const inputPassword = document.getElementById("passwordInput").value;
+        if (passwords.includes(inputPassword)) {
+            document.body.removeChild(passwordModal); // 모달 닫기
 
-        // 비밀번호 검증 로직을 함수로 분리
-        function verifyPassword() {
-            const inputPassword = document.getElementById("passwordInput").value;
-            if (passwords.includes(inputPassword)) {
-                document.body.removeChild(passwordModal); // 모달 닫기
-
-                // 비밀번호 확인 후 데이터 로드
+            // 🔥 비밀번호 확인 후에만 데이터를 불러옴
+            setTimeout(() => {
                 loadDataFromLocalStorage();
                 setupRealtimeUpdates();
-                setTimeout(loadDataFromFirebase, 500);
-            } else {
-                alert("비밀번호가 틀렸습니다. 다시 시도하세요.");
-            }
+                loadDataFromFirebase();
+            }, 500);
+        } else {
+            alert("비밀번호가 틀렸습니다. 다시 시도하세요.");
         }
-    };
+    }
+};
 
 
 
@@ -1001,178 +1005,186 @@ function loadDataFromFirebase() {
             filterDataByDate(selectedDate);
         });
 
-        // 선택한 날짜에 따라 데이터를 필터링하여 표시하는 함수
-        function filterDataByDate(date) {
-    tableBody.innerHTML = ''; // 기존 테이블 데이터 지우기
-    deliveryTableBody.innerHTML = ''; // 오른쪽 테이블 초기화
-    count = 1; // 카운터 초기화
+ // ✅ 데이터 필터링 함수 (선택한 날짜에 따라 테이블 데이터 필터링)
+    function filterDataByDate(date) {
+        tableBody.innerHTML = ''; // 기존 데이터 삭제
+        deliveryTableBody.innerHTML = ''; // 배달 테이블 초기화
+        count = 1; // 카운터 초기화
 
-    let dailyTotalAmount = 0; // 일 매출 초기화
-    let monthlyTotalAmount = 0; // 월 매출 초기화
+        let dailyTotalAmount = 0; // 일 매출
+        let monthlyTotalAmount = 0; // 월 매출
 
-    if (date === 'all') {
-        // 추가된 코드: 날짜 필터가 "All Dates"일 경우
+        const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+        const currentMonth = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }).split('/')[1];
+
         allData.forEach(item => {
-            const itemDateObj = new Date(item.data.timestamp); // 데이터의 타임스탬프를 Date 객체로 변환
-            const totalAmountText = item.data.totalAmount || '0'; // null 또는 undefined일 경우 기본값 0 설정
-            const totalAmount = parseFloat(totalAmountText.replace(/[^0-9.-]+/g, '')) || 0; // 숫자 이외의 문자 제거
-
-            // 일 매출과 월 매출 누적
+            const itemDateObj = new Date(item.data.timestamp);
             const itemDate = itemDateObj.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-            const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
             const itemMonth = itemDateObj.getMonth() + 1;
             const itemYear = itemDateObj.getFullYear();
-            const currentMonth = new Date().getMonth() + 1;
-            const currentYear = new Date().getFullYear();
+            const totalAmountText = item.data.totalAmount || '0';
+            const totalAmount = parseFloat(totalAmountText.replace(/[^0-9.-]+/g, '')) || 0;
+
+            if (date === 'all' || date === itemDate) {
+                displayData(item.key, item.data);
+            }
 
             if (itemDate === today) {
-                dailyTotalAmount += totalAmount; // 오늘 날짜의 매출 누적
-            }
-            if (itemMonth === currentMonth && itemYear === currentYear) {
-                monthlyTotalAmount += totalAmount; // 이번 달 매출 누적
+                dailyTotalAmount += totalAmount;
             }
 
-            displayData(item.key, item.data); // 모든 데이터를 테이블에 표시
-        });
-    } else {
-        // 기존 코드: 특정 날짜 선택 시 필터링
-        const selectedDateParts = date.split('/'); // 'DD/MM/YYYY' 형식 분리
-        const selectedDay = parseInt(selectedDateParts[0], 10);
-        const selectedMonth = parseInt(selectedDateParts[1], 10); // 월은 1부터 시작
-        const selectedYear = parseInt(selectedDateParts[2], 10);
-
-        // 월 시작과 선택된 날짜의 끝 계산
-        const startOfMonth = new Date(selectedYear, selectedMonth - 1, 1); // 해당 월의 1일
-        const endOfSelectedDay = new Date(selectedYear, selectedMonth - 1, selectedDay, 23, 59, 59); // 선택된 날짜의 마지막 시간
-
-        allData.forEach(item => {
-            const itemDateObj = new Date(item.data.timestamp); // 데이터의 타임스탬프를 Date 객체로 변환
-            const itemDay = itemDateObj.getDate();
-            const itemMonth = itemDateObj.getMonth() + 1; // 월은 0부터 시작하므로 +1
-            const itemYear = itemDateObj.getFullYear();
-
-            // Total Amount 필드에서 숫자만 추출
-            const totalAmountText = item.data.totalAmount || '0'; // null 또는 undefined일 경우 기본값 0 설정
-            const totalAmount = parseFloat(totalAmountText.replace(/[^0-9.-]+/g, '')) || 0; // 숫자 이외의 문자 제거
-
-            // 일 매출 계산 (선택한 날짜와 동일한 경우)
-            if (
-                itemDay === selectedDay &&
-                itemMonth === selectedMonth &&
-                itemYear === selectedYear
-            ) {
-                displayData(item.key, item.data); // 해당 날짜의 데이터만 표시
-                dailyTotalAmount += totalAmount; // 선택된 날짜의 총 금액
-            }
-
-            // 월 매출 계산 (해당 월 1일부터 선택된 날짜까지)
-            if (
-                itemDateObj >= startOfMonth &&
-                itemDateObj <= endOfSelectedDay
-            ) {
+            if (itemMonth == currentMonth && itemYear == new Date().getFullYear()) {
                 monthlyTotalAmount += totalAmount;
             }
         });
-    }
-
-    // 일 매출 및 월 매출 업데이트
-    document.getElementById('dailyTotal').textContent = `일 매출: ${dailyTotalAmount.toLocaleString('ko-KR')} 원`;
-    document.getElementById('monthlyTotal').textContent = `월 매출: ${monthlyTotalAmount.toLocaleString('ko-KR')} 원`;
-}
-
-        // 실시간으로 새 데이터가 추가될 때 테이블에 추가 및 알림 소리 재생
-        function setupRealtimeUpdates() {
-        const dbRef = database.ref('orders');
-
-        dbRef.on('child_added', (snapshot) => {
-            const newData = { key: snapshot.key, data: snapshot.val() };
-
-            // 중복 데이터 추가 방지
-            if (!allData.some(item => item.key === newData.key)) {
-                allData.push(newData); // 새 데이터를 저장
-
-                // 필터된 데이터만 테이블에 표시하도록 수정된 부분
-                if (dateFilter.value === 'all') {
-                    displayData(newData.key, newData.data); // 모든 데이터를 테이블에 추가
-                } else {
-                    const selectedDate = dateFilter.value; // 현재 선택된 날짜
-                    const itemDate = new Date(newData.data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-
-                    if (selectedDate === itemDate) {
-                        displayData(newData.key, newData.data); // 선택된 날짜의 데이터만 추가
-                    }
-                }
-
-                saveDataToLocalStorage(); // 새 데이터를 Local Storage에 저장
-                updateSales(newData.data); // 실시간 매출 업데이트
-            }
-
-            // 날짜 필터 업데이트
-            const newDate = new Date(newData.data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }); // 브라질 시간대와 포맷으로 변경
-            if (!Array.from(dateFilter.options).some(option => option.value === newDate)) {
-                const option = document.createElement('option');
-                option.value = newDate;
-                option.textContent = newDate;
-                dateFilter.appendChild(option);
-            }
-
-            // 필터 상태가 변경되었을 때 새 데이터 처리
-            if (dateFilter.value !== 'all' && dateFilter.value !== newDate) {
-                // 필터에 따라 데이터가 추가되지 않을 수 있으므로 알림만 표시
-                showNotification();
-            } else {
-                showNotification(); // 새 데이터가 추가될 때 알림 표시
-            }
-        });
-
-
-
-    // ✅ 🚀 **Firebase에서 Pronto 상태 변경 감지 (여기에 추가!)**
-    dbRef.on('child_changed', snapshot => {
-            const updatedKey = snapshot.key;
-            const updatedData = snapshot.val();
-
-            document.querySelectorAll('#dataTable tbody tr, #deliveryTable tbody tr').forEach(row => {
-                if (row.getAttribute('data-key') === updatedKey) {
-                    row.style.backgroundColor = updatedData.pronto ? '#2F4F4F' : ''; // 상태 변경 시 배경색 업데이트
-                }
-            });
-        });
-    }
-
-
-
-        // **새로운 함수 추가: 매출 업데이트 처리**
-        function updateSales(newData) {
-        const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-        const currentMonth = today.split('/')[1] + '/' + today.split('/')[2]; // 현재 월 (MM/YYYY)
-
-        // 새로운 데이터의 총 금액 처리
-        const totalAmountText = newData.totalAmount || '0'; // null 또는 undefined일 경우 기본값 0 설정
-        const totalAmount = parseFloat(totalAmountText.replace(/[^0-9.-]+/g, '')) || 0; // 숫자 이외의 문자 제거
-        const itemDate = new Date(newData.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-        const itemMonth = itemDate.split('/')[1] + '/' + itemDate.split('/')[2];
-
-        // 기존 UI에서 현재 매출 값 가져오기
-        let dailyTotalAmount = parseFloat(document.getElementById('dailyTotal').textContent.replace(/[^0-9.-]+/g, '')) || 0;
-        let monthlyTotalAmount = parseFloat(document.getElementById('monthlyTotal').textContent.replace(/[^0-9.-]+/g, '')) || 0;
-
-        // 조건에 따라 매출 업데이트
-        if (itemDate === today) {
-            dailyTotalAmount += totalAmount; // 오늘 날짜의 총 금액 추가
-        }
-        if (itemMonth === currentMonth) {
-            monthlyTotalAmount += totalAmount; // 현재 월의 총 금액 추가
-        }
 
         // UI 업데이트
         document.getElementById('dailyTotal').textContent = `일 매출: ${dailyTotalAmount.toLocaleString('ko-KR')} 원`;
         document.getElementById('monthlyTotal').textContent = `월 매출: ${monthlyTotalAmount.toLocaleString('ko-KR')} 원`;
     }
-        
 
-        // Local Storage에 1초마다 데이터를 저장하는 함수
-        setInterval(saveDataToLocalStorage, 1000); // 1초마다 데이터를 저장
+    // ✅ Firebase에서 실시간 데이터 업데이트 처리
+    function setupRealtimeUpdates() {
+        const dbRef = database.ref('orders');
+
+        // ✅ 새로운 주문 추가 감지
+        dbRef.on('child_added', (snapshot) => {
+            const newData = { key: snapshot.key, data: snapshot.val() };
+
+            if (!allData.some(item => item.key === newData.key)) {
+                allData.push(newData);
+
+                if (dateFilter.value === 'all' || new Date(newData.data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) === dateFilter.value) {
+                    displayData(newData.key, newData.data);
+                }
+
+                saveDataToLocalStorage();
+                updateSales(newData.data);
+            }
+
+            updateDateFilter(newData.data.timestamp);
+            showNotification();
+        });
+
+        // ✅ 주문 변경 감지 (결제 정보 및 pronto 상태 반영)
+        dbRef.on('child_changed', (snapshot) => {
+            const updatedKey = snapshot.key;
+            const updatedData = snapshot.val();
+
+            document.querySelectorAll('#dataTable tbody tr, #deliveryTable tbody tr').forEach(row => {
+                if (row.getAttribute('data-key') === updatedKey) {
+                    // 결제 정보 업데이트
+                    const paymentCell = row.children[7];
+                    if (updatedData.paymentMethod) {
+                        paymentCell.textContent = updatedData.paymentMethod;
+                        paymentCell.style.backgroundColor = '#d0e7ff';
+                    }
+
+                    // Pronto 상태 업데이트
+                    row.style.backgroundColor = updatedData.pronto ? '#2F4F4F' : '';
+                }
+            });
+        });
+    }
+
+    // ✅ 결제 정보 저장 및 Firebase 업데이트
+    function submitPayment() {
+        const paymentMethod = document.getElementById('paymentMethod').value;
+        const modalTitle = document.getElementById('modalTitle').textContent;
+        const tableNumber = parseInt(modalTitle.replace('Table ', '').replace(' Details', ''), 10);
+
+        const dbRef = firebase.database().ref('orders');
+        dbRef.once('value', (snapshot) => {
+            const data = snapshot.val();
+            const targetKey = Object.keys(data || {}).find(key => Number(data[key].tableNumber) === tableNumber);
+
+            if (targetKey) {
+                dbRef.child(targetKey).update({ paymentMethod }).then(() => {
+                    alert('결제가 성공적으로 완료되었습니다.');
+                    closeModal();
+                }).catch((error) => {
+                    console.error('결제 저장 중 오류:', error);
+                });
+            } else {
+                alert('해당 테이블 번호에 대한 데이터를 찾을 수 없습니다.');
+            }
+        });
+    }
+
+    // ✅ 날짜 필터 옵션 업데이트
+    function updateDateFilter(timestamp) {
+        const newDate = new Date(timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+        if (!Array.from(dateFilter.options).some(option => option.value === newDate)) {
+            const option = document.createElement('option');
+            option.value = newDate;
+            option.textContent = newDate;
+            dateFilter.appendChild(option);
+        }
+    }
+
+    // ✅ 새 주문이 들어올 때 매출 자동 업데이트
+    function updateSales(newData) {
+        const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+        const currentMonth = today.split('/')[1];
+
+        let dailyTotalAmount = parseFloat(document.getElementById('dailyTotal').textContent.replace(/[^0-9.-]+/g, '')) || 0;
+        let monthlyTotalAmount = parseFloat(document.getElementById('monthlyTotal').textContent.replace(/[^0-9.-]+/g, '')) || 0;
+
+        const totalAmountText = newData.totalAmount || '0';
+        const totalAmount = parseFloat(totalAmountText.replace(/[^0-9.-]+/g, '')) || 0;
+        const itemDate = new Date(newData.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+        const itemMonth = new Date(newData.timestamp).getMonth() + 1;
+
+        if (itemDate === today) {
+            dailyTotalAmount += totalAmount;
+        }
+
+        if (itemMonth == currentMonth) {
+            monthlyTotalAmount += totalAmount;
+        }
+
+        document.getElementById('dailyTotal').textContent = `일 매출: ${dailyTotalAmount.toLocaleString('ko-KR')} 원`;
+        document.getElementById('monthlyTotal').textContent = `월 매출: ${monthlyTotalAmount.toLocaleString('ko-KR')} 원`;
+    }
+
+    // ✅ 주문 삭제 처리
+    function deleteRow(row, key) {
+        const isPronto = loadProntoState(key);
+
+        if (isPronto) {
+            const password = prompt('Pronto 상태입니다. 삭제하려면 비밀번호를 입력하세요:');
+            if (password !== '1127') {
+                alert('비밀번호가 올바르지 않습니다. 삭제가 취소되었습니다.');
+                return;
+            }
+        }
+
+        const dbRef = database.ref('orders').child(key);
+        dbRef.remove()
+            .then(() => {
+                row.parentNode.removeChild(row);
+                allData = allData.filter(item => item.key !== key);
+                saveDataToLocalStorage();
+                alert('데이터가 성공적으로 삭제되었습니다.');
+            })
+            .catch((error) => {
+                console.error('데이터 삭제 중 오류 발생:', error);
+                alert('데이터 삭제 중 오류가 발생했습니다.');
+            });
+    }
+
+    // ✅ Local Storage에서 데이터 불러오기
+    function loadDataFromLocalStorage() {
+        const storedData = localStorage.getItem('firebaseData');
+        if (storedData) {
+            allData = JSON.parse(storedData);
+            allData.forEach(item => {
+                displayData(item.key, item.data);
+            });
+            populateDateFilter();
+        }
+    }
+
     </script>
 </body>
 </html>

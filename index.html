@@ -613,8 +613,12 @@ printWindow.print(); // 인쇄 실행
             const tableNumber = data.tableNumber || 'N/A'; // 테이블 번호가 없으면 'N/A'
             const timestamp = data.timestamp || 'N/A'; // 타임스탬프가 없으면 'N/A'
             const dateObj = new Date(timestamp); // 타임스탬프를 Date 객체로 변환
-            const date = dateObj.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }); // 브라질 시간대로 날짜 추출
-            const time = dateObj.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false }); // 24시간 형식 시간 추출
+
+            // ✅ 날짜에서 연도 (/2025) 제거
+    const date = dateObj.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }).split('/').slice(0, 2).join('/');
+
+    // ✅ 시간에서 초 (:58) 제거
+    const time = dateObj.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false }).split(':').slice(0, 2).join(':');
 
             let orderList = ''; // 주문 목록 초기화
 
@@ -647,8 +651,8 @@ printWindow.print(); // 인쇄 실행
 
             
             // 키워드 배열 정의
-            const blueKeywords = ['chicken', 'meia/meia', 'pork']; // 파란색으로 표시할 키워드
-            const orangeKeywords = ['teokpoki', 'lapokki', 'batata']; // 주황색으로 표시할 키워드
+            const blueKeywords = ['chicken', 'meia/meia', 'meia']; // 파란색으로 표시할 키워드
+            const orangeKeywords = ['teokpoki', 'lapokki', 'batata', 'lamen']; // 주황색으로 표시할 키워드
             const yellowKeywords = [
                 "Coca", "Coca Zero", "Guaraná", "Fanta Uva", "Fanta Maracujá",
                 "Fanta Laranja", "Sprite", "Schweppes", "Soda Melancia", "Soda de Melão",
@@ -824,7 +828,8 @@ printWindow.print(); // 인쇄 실행
             contactCell.textContent = contact; // 연락처 표시
             addressCell.textContent = address; // 주소 표시
             qtyCell.innerHTML = qtyText; // 수량 표시
-            totalAmountCell.textContent = totalAmount.replace('Total: ', ''); // 'Total: ' 문자열 제거 후 셀에 설정
+            totalAmountCell.textContent = totalAmount.replace(/Total:\s?/g, '').replace(/R\$\s?/g, ''); 
+
 
             // 행에 셀 추가
             row.appendChild(numberCell);

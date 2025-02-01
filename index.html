@@ -844,10 +844,10 @@ const time = new Date(data.timestamp).toLocaleTimeString('pt-BR', { timeZone: 'A
             row.appendChild(actionCell); // Action 셀 추가
 
 
-            // Pront 상태에 따라 배경색 적용
-            if (loadProntoState(key)) {
-                row.style.backgroundColor = 'green'; // Pronto 상태일 경우 녹색 배경 적용
-            }
+        // Pront 상태에 따라 배경색 적용 (항상 동일한 색상 유지)
+        if (loadProntoState(key)) {
+            row.style.backgroundColor = '#008000'; // ✅ 항상 같은 녹색 (#008000 - Deep Green)
+        }
 
             // 선택된 테이블에 행 추가
             targetTableBody.insertBefore(row, targetTableBody.firstChild);

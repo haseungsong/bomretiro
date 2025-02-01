@@ -567,6 +567,20 @@ printWindow.print(); // 인쇄 실행
                     playNotificationSound();
                     notification.close(); // 알림 닫기
                 };
+
+                // **아이콘이 없을 경우 기본 아이콘으로 대체**
+                notification.onerror = () => {
+                    console.warn("알림 아이콘을 찾을 수 없습니다. 기본 아이콘을 사용합니다.");
+                    const fallbackNotification = new Notification("새로운 주문이 들어왔습니다!", {
+                        body: "클릭하여 소리를 재생하세요.",
+                        icon: "https://via.placeholder.com/50" // 기본 아이콘으로 대체
+                    });
+
+                    fallbackNotification.onclick = () => {
+                        playNotificationSound();
+                        fallbackNotification.close();
+                    };
+                };
             }
         }
 

@@ -130,69 +130,73 @@
     </div>
 
     <script>
-      function showOrderDetails(tableNumber) {
-        const modal = document.getElementById('orderModal');
-        const modalContent = document.getElementById('modalContent');
-        const modalTitle = document.getElementById('modalTitle');
-        const selectedDate = document.getElementById('dateFilter').value; // 선택된 날짜 필터 값 가져오기
+    function showOrderDetails(tableNumber) {
+    const modal = document.getElementById('orderModal');
+    const modalContent = document.getElementById('modalContent');
+    const modalTitle = document.getElementById('modalTitle');
+    const selectedDate = document.getElementById('dateFilter').value; // 선택된 날짜 필터 값 가져오기
 
-        modalTitle.textContent = `Table ${tableNumber} Details`;
+    modalTitle.textContent = `Table ${tableNumber} Details`;
 
-        // Firebase에서 해당 테이블 데이터를 가져오기
-        const dbRef = firebase.database().ref('orders');
-        dbRef.once('value', (snapshot) => {
-            const data = snapshot.val();
-            const tableOrders = Object.values(data || {}).filter(order => {
-                const orderTableNumber = Number(order.tableNumber); // 데이터의 tableNumber
-                const orderDate = new Date(order.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    // Firebase에서 해당 테이블 데이터를 가져오기
+    const dbRef = firebase.database().ref('orders');
+    dbRef.once('value', (snapshot) => {
+        const data = snapshot.val();
+        const tableOrders = Object.values(data || {}).filter(order => {
+            const orderTableNumber = Number(order.tableNumber); // 데이터의 tableNumber
+            const orderDate = new Date(order.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
-                // 테이블 번호와 날짜 필터 조건 확인
-                return orderTableNumber === tableNumber && // tableNumber 매칭
-                    (selectedDate === 'all' || selectedDate === orderDate); // 날짜 필터 매칭
-            });
+            // 🔹 미결제 주문 필터링 (paymentMethod가 없는 경우만)
+            const isUnpaid = !order.paymentMethod || order.paymentMethod === "N/A" || order.paymentMethod.trim() === "";
 
-            if (tableOrders.length > 0) {
-                // 주문 목록과 합계를 계산
-                let totalAmount = 0; // 합계를 초기화
-                const orderDetails = tableOrders.map(order => {
-                    const formattedOrderList = Array.isArray(order.orderList)
-                        ? order.orderList.map(item => `${item.quantity}x ${item.name}`).join('<br>') // 각 항목을 줄바꿈으로 구분
-                        : 'No orders found'; // orderList가 배열이 아닐 경우 기본 메시지
+            // 🔹 날짜 필터가 "all"이면 모든 날짜 포함, 특정 날짜가 선택되면 해당 날짜의 주문만 포함
+            const isDateMatch = selectedDate === 'all' || selectedDate === orderDate;
 
-                    // **총액 계산 (문자열에서 숫자 추출 후 변환)**
-                    const cleanAmount = parseFloat(String(order.totalAmount).replace(/[^0-9.-]+/g, '')) || 0;
-                    totalAmount += cleanAmount; // 정리된 값을 누적
+            return orderTableNumber === tableNumber && isUnpaid && isDateMatch; // ✅ 미결제 + 날짜 필터 적용
+        });
 
-                    return `
-                        <div style="margin-bottom: 20px;">
-                            <p><strong>Order List:</strong></p>
-                            <div style="border: 1px solid #ddd; padding: 10px;">
-                                ${formattedOrderList}
-                            </div>
-                            <p><strong>Total Amount:</strong> ${order.totalAmount || '0'} 원</p>
+        if (tableOrders.length > 0) {
+            // 주문 목록과 합계를 계산
+            let totalAmount = 0; // 합계를 초기화
+            const orderDetails = tableOrders.map(order => {
+                const formattedOrderList = Array.isArray(order.orderList)
+                    ? order.orderList.map(item => `${item.quantity}x ${item.name}`).join('<br>') // 각 항목을 줄바꿈으로 구분
+                    : 'No orders found'; // orderList가 배열이 아닐 경우 기본 메시지
+
+                // **총액 계산 (문자열에서 숫자 추출 후 변환)**
+                const cleanAmount = parseFloat(String(order.totalAmount).replace(/[^0-9.-]+/g, '')) || 0;
+                totalAmount += cleanAmount; // 정리된 값을 누적
+
+                return `
+                    <div style="margin-bottom: 20px;">
+                        <p><strong>Order List:</strong></p>
+                        <div style="border: 1px solid #ddd; padding: 10px;">
+                            ${formattedOrderList}
                         </div>
-                    `;
-                }).join('');
-
-                // **총합 계산 결과를 하단에 추가**
-                const totalAmountHtml = `
-                    <div style="margin-top: 20px; text-align: left; font-weight: bold; font-size: 16px;">
-                        Total Amount (합계): ${totalAmount.toLocaleString('ko-KR')} 원
+                        <p><strong>Total Amount:</strong> ${order.totalAmount || '0'} 원</p>
                     </div>
                 `;
+            }).join('');
 
-                // 모달 내용 구성
-                modalContent.innerHTML = `
-                    ${orderDetails}
-                    ${totalAmountHtml} <!-- 추가된 총합 HTML -->
-                `;
-            } else {
-                modalContent.innerHTML = '<p>No orders found for this table.</p>';
-            }
+            // **총합 계산 결과를 하단에 추가**
+            const totalAmountHtml = `
+                <div style="margin-top: 20px; text-align: left; font-weight: bold; font-size: 16px;">
+                    Total Amount (합계): ${totalAmount.toLocaleString('ko-KR')} 원
+                </div>
+            `;
 
-            modal.style.display = 'block'; // 모달 열기
-        });
-    }
+            // 모달 내용 구성
+            modalContent.innerHTML = `
+                ${orderDetails}
+                ${totalAmountHtml} <!-- 추가된 총합 HTML -->
+            `;
+        } else {
+            modalContent.innerHTML = '<p>🚨 결제되지 않은 주문이 없습니다.</p>';
+        }
+
+        modal.style.display = 'block'; // 모달 열기
+    });
+}
 
     // 모달 닫기
     function closeModal() {

@@ -259,26 +259,35 @@ function submitPayment() {
             return;
         }
 
-        // 🔹 기존 주문 데이터에 결제 방식 추가
         const orderRef = firebase.database().ref(`orders/${targetKey}`);
+        
+        // ✅ `orders` 테이블에도 `paymentMethod` 추가
         orderRef.update({ paymentMethod }).then(() => {
             console.log("✅ 주문 정보에 결제 방식 업데이트 완료!");
             
-            // 🔹 `payments` 경로에도 데이터 저장
+            // 🔹 `payments` 테이블에도 저장
             const paymentsRef = firebase.database().ref('payments').push();
-            const newPayment = {
+            return paymentsRef.set({
                 tableNumber,
                 paymentMethod,
                 timestamp: new Date().toISOString()
-            };
-
-            return paymentsRef.set(newPayment);
+            });
         }).then(() => {
             console.log("✅ 결제 정보 저장 완료!");
             alert('✅ 결제가 성공적으로 저장되었습니다!');
 
-            // 🔄 UI 자동 업데이트 실행
-            updateTableUI(tableNumber, paymentMethod);
+            // ✅ UI 업데이트 (새로고침 없이 반영)
+            const rows = document.querySelectorAll('#dataTable tbody tr, #deliveryTable tbody tr');
+            rows.forEach(row => {
+                const tableNumberCell = row.cells[3]; // 테이블 번호 셀
+                const paymentCell = row.cells[7]; // Payment 셀
+
+                if (tableNumberCell && paymentCell && Number(tableNumberCell.textContent) === tableNumber) {
+                    paymentCell.textContent = paymentMethod; // Payment 값 업데이트
+                    row.style.backgroundColor = '#d0e7ff'; // 결제된 행 색상 변경
+                }
+            });
+
             closeModal();
         }).catch((error) => {
             console.error("❌ 결제 저장 실패:", error);
@@ -286,17 +295,26 @@ function submitPayment() {
     });
 }
 
-// 🔄 **Firebase 실시간 업데이트 리스너 추가 (새 결제 감지)**
+// 🔹 Firebase의 payments 데이터가 추가될 때만 Payment 정보를 업데이트
 const paymentsRef = firebase.database().ref('payments');
 
 paymentsRef.on('child_added', (snapshot) => {
     const newPayment = snapshot.val();
-    console.log("🔄 새로운 결제 감지:", newPayment);
 
-    // 🔹 `updateTableUI()`를 호출하여 테이블 UI 업데이트
-    updateTableUI(newPayment.tableNumber, newPayment.paymentMethod);
+    const rows = document.querySelectorAll('#dataTable tbody tr, #deliveryTable tbody tr');
+
+    rows.forEach(row => {
+        const tableNumberCell = row.cells[3];
+        const paymentCell = row.cells[7];
+
+        if (tableNumberCell && paymentCell && Number(tableNumberCell.textContent) === newPayment.tableNumber) {
+            if (paymentCell.textContent === 'N/A' || paymentCell.textContent.trim() === '') {
+                paymentCell.textContent = newPayment.paymentMethod;
+                row.style.backgroundColor = '#d0e7ff';
+            }
+        }
+    });
 });
-
     </script>
 
 
@@ -723,18 +741,17 @@ const time = new Date(data.timestamp).toLocaleTimeString('pt-BR', { timeZone: 'A
             const paymentCell = document.createElement('td'); // Payment 셀
 paymentCell.textContent = 'N/A'; // 기본값 설정
 
-// 🔹 Firebase에서 `payments` 테이블 조회하여 Payment 값 가져오기
 const paymentsRef = firebase.database().ref('payments');
 paymentsRef.once('value', (snapshot) => {
     const paymentsData = snapshot.val();
-    if (paymentsData) {
-        // 🔎 해당 테이블 번호와 일치하는 결제 방식 찾기
-        const foundPayment = Object.values(paymentsData).find(payment => payment.tableNumber == data.tableNumber);
-        if (foundPayment) {
-            paymentCell.textContent = foundPayment.paymentMethod;
-            row.style.backgroundColor = '#d0e7ff'; // 배경색 변경
-        }
-    }
+   // 🔹 새로운 주문인지 확인 (데이터베이스에 `paymentMethod` 값이 없는 경우 새로운 주문)
+if (!data.paymentMethod) {
+    paymentCell.textContent = 'N/A';  // 새 주문은 기본값 유지
+} else {
+    paymentCell.textContent = data.paymentMethod;
+    row.style.backgroundColor = '#d0e7ff'; // 기존 주문이라면 배경색 변경
+}
+    
 });
 
 // 테이블에 Payment 셀 추가
@@ -957,7 +974,7 @@ function printReceipt(data) {
     
 
        // Firebase에서 기존 데이터 불러오기 (시간 역순으로 표시)
-function loadDataFromFirebase() {
+       function loadDataFromFirebase() {
     const dbRef = database.ref('orders'); // 데이터가 저장된 정확한 경로로 설정
     dbRef.once('value', (snapshot) => {
         const data = snapshot.val();

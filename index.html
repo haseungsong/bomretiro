@@ -595,17 +595,26 @@ paymentsRef.on('child_added', (snapshot) => {
         // 새로운 주문 알림 생성 함수
         function showNotification() {
             if (Notification.permission === "granted") {
+                // 알림 생성
                 const notification = new Notification("새로운 주문이 들어왔습니다!", {
-                    body: "클릭하여 소리를 재생하세요.",
+                    body: "새로운 주문이 들어왔습니다.",
                     icon: "notification_icon.png" // 알림 아이콘 (원하는 이미지로 교체 가능)
                 });
 
-                // 사용자가 알림을 클릭하면 소리 재생
-                notification.onclick = () => {
-                    playNotificationSound();
+                // 소리 재생 함수
+                playNotificationSound();
+
+                // 알림이 5초 후 자동으로 닫히게 설정 (5초는 예시 값, 원하는 시간으로 조정 가능)
+                setTimeout(() => {
                     notification.close(); // 알림 닫기
-                };
+                }, 5000); // 5000ms = 5초
             }
+        }
+
+        // 소리 재생 함수
+        function playNotificationSound() {
+            var audio = new Audio('https://drive.google.com/uc?id=1piz-MeTgV6fYnaK_HrfbOJBqja2i62Gn'); // Google Drive MP3 파일의 다운로드 가능한 링크
+            audio.play();
         }
 
         // Pront 상태를 Local Storage에 저장하는 함수
@@ -656,12 +665,12 @@ paymentsRef.on('child_added', (snapshot) => {
             const timestamp = data.timestamp || 'N/A'; // 타임스탬프가 없으면 'N/A'
             const dateObj = new Date(timestamp); // 타임스탬프를 Date 객체로 변환
             // ✅ 날짜 형식 변경 (DD/MM/YYYY → DD/MM)
-const date = new Date(data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-    .split('/').slice(0, 2).join('/');
+            const date = new Date(data.timestamp).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+                .split('/').slice(0, 2).join('/');
 
-// ✅ 시간 형식 변경 (HH:MM:SS → HH:MM)
-const time = new Date(data.timestamp).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false })
-    .split(':').slice(0, 2).join(':');
+            // ✅ 시간 형식 변경 (HH:MM:SS → HH:MM)
+            const time = new Date(data.timestamp).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false })
+                .split(':').slice(0, 2).join(':');
 
             let orderList = ''; // 주문 목록 초기화
 

@@ -746,26 +746,27 @@ paymentsRef.on('child_added', (snapshot) => {
             const timestampCell = document.createElement('td'); // 시간만 표시되는 셀
             const tableNumberCell = document.createElement('td');
             const orderListCell = document.createElement('td');
+            orderListCell.textContent = orderList.replace(/[\\"']/g, ''); // 역슬래시(\), 쌍따옴표(") 제거
             const nameCell = document.createElement('td'); // 이름 셀
             const contactCell = document.createElement('td'); // 연락처 셀
             const addressCell = document.createElement('td'); // 주소 셀
             const qtyCell = document.createElement('td'); // Qty 셀 추가
             const totalAmountCell = document.createElement('td');
             const paymentCell = document.createElement('td'); // Payment 셀
-paymentCell.textContent = 'N/A'; // 기본값 설정
+            paymentCell.textContent = 'N/A'; // 기본값 설정
 
-const paymentsRef = firebase.database().ref('payments');
-paymentsRef.once('value', (snapshot) => {
-    const paymentsData = snapshot.val();
-   // 🔹 새로운 주문인지 확인 (데이터베이스에 `paymentMethod` 값이 없는 경우 새로운 주문)
-if (!data.paymentMethod) {
-    paymentCell.textContent = 'N/A';  // 새 주문은 기본값 유지
-} else {
-    paymentCell.textContent = data.paymentMethod;
-    row.style.backgroundColor = '#d0e7ff'; // 기존 주문이라면 배경색 변경
-}
-    
-});
+            const paymentsRef = firebase.database().ref('payments');
+            paymentsRef.once('value', (snapshot) => {
+                const paymentsData = snapshot.val();
+            // 🔹 새로운 주문인지 확인 (데이터베이스에 `paymentMethod` 값이 없는 경우 새로운 주문)
+            if (!data.paymentMethod) {
+                paymentCell.textContent = 'N/A';  // 새 주문은 기본값 유지
+            } else {
+                paymentCell.textContent = data.paymentMethod;
+                row.style.backgroundColor = '#d0e7ff'; // 기존 주문이라면 배경색 변경
+            }
+                
+            });
 
 // 테이블에 Payment 셀 추가
 row.appendChild(paymentCell);
